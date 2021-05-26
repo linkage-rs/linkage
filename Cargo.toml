@@ -5,7 +5,10 @@ authors = ["Clark Moody <clark@clarkmoody.com>"]
 edition = "2018"
 
 [dependencies]
+rand = "0.8"
 serde_json = "1.0"
+# Needed to solve an Iced dependency problem...
+web-sys = "0.3.50"
 
 [dependencies.serde]
 version = "1.0"
@@ -24,7 +27,7 @@ version = "0.2"
 version = "0.3"
 
 [patch.crates-io]
-iced = { git = "https://github.com/hecrj/iced.git", rev = "4b8ba8309f6645cdcb5bd605f8dd88097f8ee5a7"}
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "4b8ba8309f6645cdcb5bd605f8dd88097f8ee5a7"}
-iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "4b8ba8309f6645cdcb5bd605f8dd88097f8ee5a7"}
-iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "4b8ba8309f6645cdcb5bd605f8dd88097f8ee5a7"}
+iced = { git = "https://github.com/hecrj/iced.git", rev = "e292821c3780fc5a57c835815efc7a232ce4dc32"}
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "e292821c3780fc5a57c835815efc7a232ce4dc32"}
+iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "e292821c3780fc5a57c835815efc7a232ce4dc32"}
+iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "e292821c3780fc5a57c835815efc7a232ce4dc32"}
