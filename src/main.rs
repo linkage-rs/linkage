@@ -1,15 +1,18 @@
+use iced::button;
 use iced::executor;
 use iced::keyboard;
 use iced::{
-    self, Align, Application, Clipboard, Column, Command, Container, Element, Length, Row,
+    self, Align, Application, Button, Clipboard, Column, Command, Container, Element, Length, Row,
     Settings, Subscription, Text,
 };
 use iced_native;
+use iced_native::window;
 
 mod data;
+use data::{Freq, User};
 
 pub fn main() -> iced::Result {
-    let freq = data::freq::Freq::load();
+    let freq = Freq::load();
 
     Linkage::run(Settings {
         flags: Flags {
@@ -22,7 +25,9 @@ pub fn main() -> iced::Result {
 #[derive(Debug, Default)]
 struct Linkage {
     should_exit: bool,
-    freq: data::freq::Freq,
+    freq: Freq,
+    user: User,
+    exit_button: button::State,
     words: Vec<String>,
 }
 
@@ -34,7 +39,7 @@ enum Message {
 
 #[derive(Debug, Default)]
 struct Flags {
-    freq: data::freq::Freq,
+    freq: Freq,
 }
 
 impl Application for Linkage {
@@ -46,6 +51,8 @@ impl Application for Linkage {
         let linkage = Linkage {
             should_exit: false,
             freq: flags.freq,
+            user: User::default(),
+            exit_button: button::State::new(),
             words: Vec::new(),
         };
         (linkage, Command::none())
@@ -61,7 +68,7 @@ impl Application for Linkage {
                 self.handle_event(event);
             }
             Message::Exit => {
-                self.should_exit = true;
+                self.prepare_close();
             }
         }
 
@@ -88,7 +95,9 @@ impl Application for Linkage {
 
         let instruction = Text::new("Press <Enter> for random words.").size(13);
 
-        let content = Column::with_children(vec![row.into(), instruction.into()])
+        let button = Button::new(&mut self.exit_button, Text::new("Exit")).on_press(Message::Exit);
+
+        let content = Column::with_children(vec![row.into(), instruction.into(), button.into()])
             .spacing(10)
             .align_items(Align::Center);
 
@@ -104,6 +113,10 @@ impl Application for Linkage {
 impl Linkage {
     fn handle_event(&mut self, event: iced_native::Event) {
         match event {
+            iced_native::Event::Window(window::Event::CloseRequested) => {
+                // Send command to prepare for close
+                self.prepare_close();
+            }
             iced_native::Event::Keyboard(keyboard_event) => self.handle_keyboard(keyboard_event),
             iced_native::Event::Mouse(_mouse_event) => {}
             _ => {}
@@ -124,5 +137,10 @@ impl Linkage {
             },
             _ => {}
         }
+    }
+
+    fn prepare_close(&mut self) {
+        println!("{:?}", &self.user);
+        self.should_exit = true;
     }
 }
