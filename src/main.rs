@@ -1,15 +1,16 @@
-use iced::button;
 use iced::executor;
 use iced::keyboard;
 use iced::{
-    self, Align, Application, Button, Clipboard, Column, Command, Container, Element, Length, Row,
-    Settings, Subscription, Text,
+    self, Application, Clipboard, Command, Container, Element, Length, Settings, Subscription,
 };
 use iced_native;
 use iced_native::window;
 
 mod data;
+mod screen;
+
 use data::{Freq, User};
+use screen::Screen;
 
 pub fn main() -> iced::Result {
     let freq = Freq::load();
@@ -18,23 +19,23 @@ pub fn main() -> iced::Result {
         flags: Flags {
             freq: freq.unwrap_or_default(),
         },
+        exit_on_close_request: false,
         ..Settings::default()
     })
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Linkage {
     should_exit: bool,
     freq: Freq,
     user: User,
-    exit_button: button::State,
-    words: Vec<String>,
+    screen: Screen,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     Event(iced_native::Event),
-    Exit,
+    Screen(screen::Message),
 }
 
 #[derive(Debug, Default)]
@@ -52,8 +53,7 @@ impl Application for Linkage {
             should_exit: false,
             freq: flags.freq,
             user: User::default(),
-            exit_button: button::State::new(),
-            words: Vec::new(),
+            screen: Screen::training(),
         };
         (linkage, Command::none())
     }
@@ -64,19 +64,26 @@ impl Application for Linkage {
 
     fn update(&mut self, message: Message, _clipboard: &mut Clipboard) -> Command<Message> {
         match message {
-            Message::Event(event) => {
-                self.handle_event(event);
-            }
-            Message::Exit => {
-                self.prepare_close();
+            Message::Event(event) => self.handle_event(event),
+            Message::Screen(message) => {
+                if let Some((command, event)) = self.screen.update(message) {
+                    match event {
+                        screen::Event::ExitRequested => {
+                            Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
+                        }
+                    }
+                } else {
+                    Command::none()
+                }
             }
         }
-
-        Command::none()
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        iced_native::subscription::events().map(Message::Event)
+        Subscription::batch(vec![
+            self.screen.subscription().map(Message::Screen),
+            iced_native::subscription::events().map(Message::Event),
+        ])
     }
 
     fn should_exit(&self) -> bool {
@@ -84,26 +91,12 @@ impl Application for Linkage {
     }
 
     fn view(&mut self) -> Element<Message> {
-        const SPACE: u16 = 10;
-        let row = Row::with_children(
-            self.words
-                .iter()
-                .map(|word| Text::new(word.clone()).into())
-                .collect(),
-        )
-        .spacing(SPACE);
-
-        let instruction = Text::new("Press <Enter> for random words.").size(13);
-
-        let button = Button::new(&mut self.exit_button, Text::new("Exit")).on_press(Message::Exit);
-
-        let content = Column::with_children(vec![row.into(), instruction.into(), button.into()])
-            .spacing(10)
-            .align_items(Align::Center);
+        let content = self.screen.view().map(Message::Screen);
 
         Container::new(content)
             .width(Length::Fill)
             .height(Length::Fill)
+            .padding(10)
             .center_x()
             .center_y()
             .into()
@@ -111,36 +104,17 @@ impl Application for Linkage {
 }
 
 impl Linkage {
-    fn handle_event(&mut self, event: iced_native::Event) {
+    fn handle_event(&mut self, event: iced_native::Event) -> Command<Message> {
         match event {
-            iced_native::Event::Window(window::Event::CloseRequested) => {
-                // Send command to prepare for close
-                self.prepare_close();
-            }
-            iced_native::Event::Keyboard(keyboard_event) => self.handle_keyboard(keyboard_event),
-            iced_native::Event::Mouse(_mouse_event) => {}
-            _ => {}
+            iced_native::Event::Window(window::Event::CloseRequested) => self.prepare_close(),
+            _ => Command::none(),
         }
     }
 
-    fn handle_keyboard(&mut self, event: keyboard::Event) {
-        use iced::keyboard::KeyCode;
-
-        let Linkage { words, freq, .. } = self;
-
-        match event {
-            keyboard::Event::KeyPressed { key_code, .. } => match key_code {
-                KeyCode::Enter => {
-                    *words = (0..10).map(|_| freq.random_word()).collect::<Vec<String>>();
-                }
-                _ => {}
-            },
-            _ => {}
-        }
-    }
-
-    fn prepare_close(&mut self) {
+    fn prepare_close(&mut self) -> Command<Message> {
+        println!("Preparing to close.");
         println!("{:?}", &self.user);
         self.should_exit = true;
+        Command::none()
     }
 }
