@@ -5,14 +5,15 @@ use std::collections::HashSet;
 /// Event log messages. Apply all messages in order to return to the current
 /// training state. Hit events are rolled up into Checkpoint messages if we
 /// need to compact the log.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Event {
-    /// Start of a training session
-    Start { time: OffsetDateTime },
     /// New letter added to our training set
     Unlock { letter: char },
-    /// A successful keystroke
-    Hit(Hit),
+    /// A line of training completed
+    Line {
+        hits: Vec<Hit>,
+        time: OffsetDateTime,
+    },
     /// Computed progress point
     Progress {
         time: OffsetDateTime,
@@ -22,14 +23,24 @@ pub enum Event {
         average_speed_wpm: f64,
         num_characters: u8,
     },
-    /// Hit statistical rollup. Purging Hit events before a Checkpoint is safe.
+    /// Hit statistical rollup. Purging Line events before a Checkpoint is safe.
     Checkpoint {},
-    /// End of a training session
-    Stop { time: OffsetDateTime },
+}
+
+#[derive(Debug, Clone)]
+pub enum Pending {
+    Unattempted(char),
+    Error { target: char, error: char },
+}
+
+#[derive(Debug, Clone)]
+pub struct PendingLine {
+    hits: Vec<Hit>,
+    pending: Vec<Pending>,
 }
 
 /// A successful keystroke
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Hit {
     /// The character to type
     target: char,

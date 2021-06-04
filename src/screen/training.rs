@@ -1,7 +1,10 @@
-use iced::{Column, Command, Element, Subscription};
+use crate::data::User;
+use iced::{Column, Command, Element, Subscription, Text};
 
 #[derive(Debug)]
-pub struct Training {}
+pub struct Training {
+    user: User,
+}
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -15,8 +18,8 @@ pub enum Event {
 }
 
 impl Training {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(user: User) -> Self {
+        Self { user }
     }
 
     pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
@@ -27,7 +30,9 @@ impl Training {
     }
 
     pub fn view(&mut self) -> Element<Message> {
-        Column::new().into()
+        Column::new()
+            .push(Text::new(format!("{} Training", self.user.name)))
+            .into()
     }
 
     pub fn subscription(&self) -> Subscription<Message> {

@@ -1,12 +1,12 @@
 use super::training::Event;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Keyboard {
     pub name: String,
     pub layout: Layout,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Layout {
     Colemak,
     ColemakDHm,

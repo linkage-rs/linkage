@@ -28,7 +28,6 @@ pub fn main() -> iced::Result {
 struct Linkage {
     should_exit: bool,
     freq: Freq,
-    user: User,
     screen: Screen,
 }
 
@@ -52,10 +51,14 @@ impl Application for Linkage {
         let linkage = Linkage {
             should_exit: false,
             freq: flags.freq,
-            user: User::default(),
-            screen: Screen::training(),
+            screen: Screen::new(),
         };
-        (linkage, Command::none())
+        (
+            linkage,
+            Command::perform(screen::loading::load(), |message| {
+                Message::Screen(screen::Message::Loading(message))
+            }),
+        )
     }
 
     fn title(&self) -> String {
@@ -70,6 +73,10 @@ impl Application for Linkage {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
+                        }
+                        screen::Event::Training(user) => {
+                            self.screen = Screen::training(user);
+                            Command::none()
                         }
                     }
                 } else {
@@ -113,7 +120,7 @@ impl Linkage {
 
     fn prepare_close(&mut self) -> Command<Message> {
         println!("Preparing to close.");
-        println!("{:?}", &self.user);
+        println!("{:?}", &self.screen);
         self.should_exit = true;
         Command::none()
     }

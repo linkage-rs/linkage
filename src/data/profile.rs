@@ -1,17 +1,18 @@
 use super::keyboard::Keyboard;
-use super::training::Event;
+use super::training::{Event, PendingLine};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct User {
     pub name: String,
     pub profiles: Vec<Profile>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Profile {
     pub name: String,
     pub keyboard: Keyboard,
     events: Vec<Event>,
+    pending_lines: Vec<PendingLine>,
 }
 
 impl Default for User {
@@ -32,6 +33,7 @@ impl Default for Profile {
             name: "Default Profile".to_string(),
             keyboard,
             events,
+            pending_lines: Vec::new(),
         }
     }
 }
