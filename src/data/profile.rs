@@ -1,5 +1,6 @@
 use super::keyboard::Keyboard;
-use super::training::{Event, PendingLine};
+use super::training::{Event, Session};
+use super::Freq;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -12,7 +13,16 @@ pub struct Profile {
     pub name: String,
     pub keyboard: Keyboard,
     events: Vec<Event>,
-    pending_lines: Vec<PendingLine>,
+}
+
+impl User {
+    pub fn profile(&self) -> &Profile {
+        &self.profiles[0]
+    }
+
+    pub fn profile_mut(&mut self) -> &mut Profile {
+        &mut self.profiles[0]
+    }
 }
 
 impl Default for User {
@@ -21,6 +31,16 @@ impl Default for User {
             name: "Default User".to_string(),
             profiles: vec![Profile::default()],
         }
+    }
+}
+
+impl Profile {
+    pub fn add_events(&mut self, events: &mut Vec<Event>) {
+        self.events.append(events)
+    }
+
+    pub fn start_session(&self, freq: &mut Freq) -> Session {
+        Session::from_char_set(freq)
     }
 }
 
@@ -33,7 +53,6 @@ impl Default for Profile {
             name: "Default Profile".to_string(),
             keyboard,
             events,
-            pending_lines: Vec::new(),
         }
     }
 }

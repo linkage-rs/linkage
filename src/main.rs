@@ -1,5 +1,4 @@
 use iced::executor;
-use iced::keyboard;
 use iced::{
     self, Application, Clipboard, Command, Container, Element, Length, Settings, Subscription,
 };
@@ -9,7 +8,7 @@ use iced_native::window;
 mod data;
 mod screen;
 
-use data::{Freq, User};
+use data::Freq;
 use screen::Screen;
 
 pub fn main() -> iced::Result {
@@ -69,13 +68,13 @@ impl Application for Linkage {
         match message {
             Message::Event(event) => self.handle_event(event),
             Message::Screen(message) => {
-                if let Some((command, event)) = self.screen.update(message) {
+                if let Some((command, event)) = self.screen.update(message, &mut self.freq) {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
                         }
                         screen::Event::Training(user) => {
-                            self.screen = Screen::training(user);
+                            self.screen = Screen::training(user, &mut self.freq);
                             Command::none()
                         }
                     }
