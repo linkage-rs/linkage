@@ -46,6 +46,16 @@ impl Freq {
         Some(freq)
     }
 
+    pub fn random_line(&mut self, min_length: usize) -> String {
+        let mut line = String::new();
+        while line.chars().count() < min_length {
+            let word = self.random_word();
+            line.push_str(&word);
+            line.push(' ');
+        }
+        line
+    }
+
     /// Generate a random word from this frequency distribution. Parameters are
     /// word length and available character set.
     pub fn random_word(&mut self) -> String {
