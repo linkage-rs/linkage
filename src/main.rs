@@ -6,6 +6,7 @@ use iced_native;
 use iced_native::window;
 
 mod data;
+mod font;
 mod screen;
 
 use data::style;
@@ -15,10 +16,17 @@ use screen::Screen;
 pub fn main() -> iced::Result {
     let freq = Freq::load();
 
+    let default_font = if let iced::Font::External { bytes, .. } = font::LIGHT {
+        Some(bytes)
+    } else {
+        None
+    };
+
     Linkage::run(Settings {
         flags: Flags {
             freq: freq.unwrap_or_default(),
         },
+        default_font,
         exit_on_close_request: false,
         ..Settings::default()
     })

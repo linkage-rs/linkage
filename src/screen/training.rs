@@ -1,5 +1,6 @@
 use crate::data::training::Session;
 use crate::data::{Freq, Theme, User};
+use crate::font;
 use iced::keyboard::{self, KeyCode};
 use iced::{Column, Command, Element, Row, Subscription, Text};
 
@@ -58,7 +59,7 @@ impl Training {
         // TODO errors display then the rest of the targets
 
         let active_line = Row::with_children(vec![
-            Text::new(hits_part).into(),
+            Text::new(hits_part).font(font::THIN).into(),
             Text::new(self.session.active_hit.target().to_string()).into(),
             Text::new(targets_part).into(),
         ]);
