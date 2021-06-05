@@ -1,4 +1,4 @@
-use crate::data::{Freq, User};
+use crate::data::{Freq, Theme, User};
 use iced::{Column, Command, Element, Subscription};
 
 pub mod loading;
@@ -68,10 +68,10 @@ impl Screen {
         }
     }
 
-    pub fn view(&mut self) -> Element<Message> {
+    pub fn view(&mut self, theme: &Theme) -> Element<Message> {
         match self {
-            Screen::Loading(loading) => loading.view().map(Message::Loading),
-            Screen::Training(training) => training.view().map(Message::Training),
+            Screen::Loading(loading) => loading.view(theme).map(Message::Loading),
+            Screen::Training(training) => training.view(theme).map(Message::Training),
             _ => Column::new().into(),
         }
     }

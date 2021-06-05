@@ -1,5 +1,5 @@
 use crate::data::training::Session;
-use crate::data::{Freq, User};
+use crate::data::{Freq, Theme, User};
 use iced::keyboard::{self, KeyCode};
 use iced::{Column, Command, Element, Row, Subscription, Text};
 
@@ -42,7 +42,7 @@ impl Training {
         }
     }
 
-    pub fn view(&mut self) -> Element<Message> {
+    pub fn view(&mut self, theme: &Theme) -> Element<Message> {
         // TODO: fold the iterator to join consecutive hits/misses into strings
         // TODO: color by hit / miss
         let hits_part = self

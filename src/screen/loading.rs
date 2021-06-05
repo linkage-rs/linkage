@@ -1,4 +1,4 @@
-use crate::data::User;
+use crate::data::{Theme, User};
 
 use iced::{Element, Text};
 
@@ -23,7 +23,7 @@ impl Loading {
         Self {}
     }
 
-    pub fn view(&mut self) -> Element<Message> {
+    pub fn view(&mut self, _theme: &Theme) -> Element<Message> {
         Text::new("Loading").into()
     }
 

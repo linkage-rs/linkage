@@ -8,7 +8,8 @@ use iced_native::window;
 mod data;
 mod screen;
 
-use data::Freq;
+use data::style;
+use data::{Freq, Theme};
 use screen::Screen;
 
 pub fn main() -> iced::Result {
@@ -28,6 +29,7 @@ struct Linkage {
     should_exit: bool,
     freq: Freq,
     screen: Screen,
+    theme: Theme,
 }
 
 #[derive(Debug, Clone)]
@@ -51,6 +53,7 @@ impl Application for Linkage {
             should_exit: false,
             freq: flags.freq,
             screen: Screen::new(),
+            theme: Theme::monokai(),
         };
         (
             linkage,
@@ -97,7 +100,7 @@ impl Application for Linkage {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let content = self.screen.view().map(Message::Screen);
+        let content = self.screen.view(&self.theme).map(Message::Screen);
 
         Container::new(content)
             .width(Length::Fill)
@@ -105,6 +108,7 @@ impl Application for Linkage {
             .padding(10)
             .center_x()
             .center_y()
+            .style(style::container::primary(&self.theme))
             .into()
     }
 }
