@@ -1,8 +1,9 @@
-use crate::data::training::Session;
+use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
 use crate::data::{Freq, Theme, User};
 use crate::font;
 use iced::keyboard::{self, KeyCode};
-use iced::{Column, Command, Element, Row, Subscription, Text};
+use iced::{Column, Command, Element, Length, Row, Space, Subscription, Text, VerticalAlignment};
+use itertools::{EitherOrBoth, Itertools};
 
 #[derive(Debug)]
 pub struct Training {
@@ -21,6 +22,12 @@ pub enum Message {
 pub enum Event {
     ExitRequested,
 }
+
+const FONT_SIZE: u16 = 16;
+const CHAR_WIDTH: u16 = 10;
+const ROW_CHARS: u16 = 60;
+const ROW_WIDTH: u16 = CHAR_WIDTH * ROW_CHARS;
+const LINE_SPACE: u16 = 10;
 
 impl Training {
     pub fn new(user: User, freq: &mut Freq) -> Self {
@@ -44,35 +51,87 @@ impl Training {
     }
 
     pub fn view(&mut self, theme: &Theme) -> Element<Message> {
-        // TODO: fold the iterator to join consecutive hits/misses into strings
-        // TODO: color by hit / miss
-        let hits_part = self
-            .session
-            .hits
-            .iter()
-            .fold(String::new(), |s, h| format!("{}{}", s, h.target()));
-        let targets_part = self
-            .session
-            .targets
-            .iter()
-            .fold(String::new(), |s, h| format!("{}{}", s, h));
-        // TODO errors display then the rest of the targets
+        let active_line = Row::with_children(
+            self.session
+                .hits
+                .iter()
+                .map(|hit| {
+                    Text::new(hit.target().to_string())
+                        .width(Length::Units(CHAR_WIDTH))
+                        .font(font::THIN)
+                        .color(if hit.is_dirty() {
+                            theme.miss
+                        } else {
+                            theme.text
+                        })
+                })
+                .chain(
+                    self.session
+                        .errors
+                        .iter()
+                        .zip_longest(
+                            std::iter::once(&self.session.active_hit.target())
+                                .chain(self.session.targets.iter()),
+                        )
+                        .map(|result| match result {
+                            EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
+                                Text::new(e.to_string())
+                                    .width(Length::Units(CHAR_WIDTH))
+                                    .font(font::MEDIUM)
+                                    .color(theme.error)
+                            }
+                            EitherOrBoth::Right(t) => {
+                                Text::new(t.to_string()).width(Length::Units(CHAR_WIDTH))
+                            }
+                        }),
+                )
+                .map(|text| text.into())
+                .collect(),
+        );
 
-        let active_line = Row::with_children(vec![
-            Text::new(hits_part).font(font::THIN).into(),
-            Text::new(self.session.active_hit.target().to_string()).into(),
-            Text::new(targets_part).into(),
-        ]);
-        let mut content = Column::new()
-            .spacing(10)
-            .push(Text::new(format!("{} Training", self.user.name)))
-            .push(active_line);
+        let target_indicator: Element<_> = if self.session.errors.is_empty() {
+            Row::with_children(vec![
+                Space::with_width(Length::Units(self.session.hits.len() as u16 * CHAR_WIDTH))
+                    .into(),
+                Text::new("\u{2015}")
+                    .width(Length::Units(CHAR_WIDTH))
+                    .height(Length::Units(LINE_SPACE))
+                    .vertical_alignment(VerticalAlignment::Center)
+                    .color(theme.target)
+                    .into(),
+            ])
+            .into()
+        } else {
+            Space::with_height(Length::Units(LINE_SPACE)).into()
+        };
 
-        for line in &self.session.next_lines {
-            content = content.push(Text::new(line))
-        }
+        let content_active = Column::new()
+            .width(Length::Units(ROW_WIDTH))
+            .push(active_line)
+            .push(target_indicator);
 
-        content.into()
+        let content_next = Column::with_children(
+            self.session
+                .next_lines
+                .iter()
+                .map(|line| {
+                    Row::with_children(
+                        line.chars()
+                            .map(|c| {
+                                Text::new(c.to_string())
+                                    .width(Length::Units(CHAR_WIDTH))
+                                    .into()
+                            })
+                            .collect(),
+                    )
+                    .into()
+                })
+                .collect(),
+        )
+        .spacing(LINE_SPACE)
+        .width(Length::Units(ROW_WIDTH));
+
+        Column::with_children(vec![content_active.into(), content_next.into()]).into()
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
