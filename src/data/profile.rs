@@ -2,6 +2,8 @@ use super::keyboard::Keyboard;
 use super::training::{Event, Session};
 use super::Freq;
 
+use std::collections::HashSet;
+
 #[derive(Debug, Clone)]
 pub struct User {
     pub name: String,
@@ -40,7 +42,15 @@ impl Profile {
     }
 
     pub fn start_session(&self, freq: &mut Freq) -> Session {
-        Session::from_char_set(freq)
+        let char_set = self
+            .events
+            .iter()
+            .filter_map(|event| match event {
+                Event::Unlock { letter } => Some(*letter),
+                _ => None,
+            })
+            .collect();
+        Session::from_char_set(char_set, freq)
     }
 }
 

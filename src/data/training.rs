@@ -33,6 +33,8 @@ pub enum Event {
 
 #[derive(Debug, Clone)]
 pub struct Session {
+    /// The character choices
+    char_set: HashSet<char>,
     /// The instant when the last hit was completed
     baseline: Instant,
     /// The current hit we're working on
@@ -63,18 +65,19 @@ pub struct Hit {
 
 impl Session {
     // TODO: Actually use a character set..
-    pub fn from_char_set(freq: &mut Freq) -> Self {
-        let line = freq.random_line(CHARS_PER_LINE);
+    pub fn from_char_set(char_set: HashSet<char>, freq: &mut Freq) -> Self {
+        let line = freq.random_line(&char_set, CHARS_PER_LINE);
 
         let mut targets: VecDeque<char> = line.chars().collect::<Vec<char>>().into();
         let first_letter = targets.pop_front().unwrap_or(' ');
 
         let mut next_lines = Vec::new();
         while next_lines.len() < NEXT_LINES {
-            next_lines.push(freq.random_line(CHARS_PER_LINE));
+            next_lines.push(freq.random_line(&char_set, CHARS_PER_LINE));
         }
 
         Self {
+            char_set,
             baseline: Instant::now(),
             active_hit: Hit::new(first_letter, ' '),
             targets,
@@ -95,7 +98,8 @@ impl Session {
             } else {
                 while self.next_lines.len() < NEXT_LINES + 1 {
                     // TODO: Actually use a character set for the line..
-                    self.next_lines.push(freq.random_line(CHARS_PER_LINE));
+                    self.next_lines
+                        .push(freq.random_line(&self.char_set, CHARS_PER_LINE));
                 }
                 for c in self.next_lines.remove(0).chars() {
                     self.targets.push_back(c);

@@ -2,7 +2,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use serde::Deserialize;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 const SCALAR: u16 = 10000;
 const EN_FREQ: &[u8] = include_bytes!("../../data/en/freq.json");
@@ -46,10 +46,10 @@ impl Freq {
         Some(freq)
     }
 
-    pub fn random_line(&mut self, min_length: usize) -> String {
+    pub fn random_line(&mut self, char_set: &HashSet<char>, min_length: usize) -> String {
         let mut line = String::new();
         while line.chars().count() < min_length {
-            let word = self.random_word();
+            let word = self.random_word(char_set);
             line.push_str(&word);
             line.push(' ');
         }
@@ -58,8 +58,8 @@ impl Freq {
 
     /// Generate a random word from this frequency distribution. Parameters are
     /// word length and available character set.
-    pub fn random_word(&mut self) -> String {
-        let mut last_letter = self.random_first_letter();
+    pub fn random_word(&mut self, char_set: &HashSet<char>) -> String {
+        let mut last_letter = self.random_first_letter(char_set);
         let Freq {
             next_letter,
             dist,
@@ -75,7 +75,7 @@ impl Freq {
         while word.len() < target {
             if let Some(freqs) = next_letter.get(&last_letter) {
                 let v = dist.sample(rng);
-                let test_letter = sample_cumulative(v, freqs);
+                let test_letter = sample_cumulative(v, freqs, char_set);
                 if test_letter == ' ' {
                     continue;
                 }
@@ -89,13 +89,13 @@ impl Freq {
         word
     }
 
-    fn random_first_letter(&mut self) -> char {
+    fn random_first_letter(&mut self, char_set: &HashSet<char>) -> char {
         let Freq {
             letter, dist, rng, ..
         } = self;
         loop {
             let v = dist.sample(rng);
-            let l = sample_cumulative(v, letter);
+            let l = sample_cumulative(v, letter, char_set);
             if l != ' ' {
                 return l;
             }
@@ -135,9 +135,15 @@ fn cumulative(mapping: HashMap<String, f32>) -> Vec<(u16, char)> {
         .collect()
 }
 
-fn sample_cumulative(value: u16, mapping: &[(u16, char)]) -> char {
-    if let Some((_, c)) = mapping.iter().take_while(|(v, _)| v <= &value).last() {
-        *c
+fn sample_cumulative(value: u16, mapping: &[(u16, char)], char_set: &HashSet<char>) -> char {
+    if let Some(c) = mapping
+        .iter()
+        .filter(|(_, c)| char_set.contains(c))
+        .take_while(|(v, _)| v <= &value)
+        .map(|(_, c)| *c)
+        .last()
+    {
+        c
     } else if !mapping.is_empty() {
         mapping[0].1
     } else {
