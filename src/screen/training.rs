@@ -1,4 +1,4 @@
-use crate::data::training::{Session, CHARS_PER_LINE};
+use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
 use crate::data::{Theme, User};
 use crate::font;
 use iced::keyboard::{self, KeyCode};
@@ -23,10 +23,10 @@ pub enum Event {
     ExitRequested,
 }
 
-// const FONT_SIZE: u16 = 16;
 const CHAR_WIDTH: u16 = 10;
-const ROW_CHARS: u16 = CHARS_PER_LINE as u16 + 10;
+const ROW_CHARS: u16 = (CHARS_PER_LINE + MAX_ERRORS - 1) as u16;
 const ROW_WIDTH: u16 = CHAR_WIDTH * ROW_CHARS;
+const ROW_ERROR_WIDTH: u16 = (MAX_ERRORS - 1) as u16 * CHAR_WIDTH;
 const LINE_SPACE: u16 = 10;
 
 impl Training {
@@ -127,7 +127,9 @@ impl Training {
         .spacing(LINE_SPACE)
         .width(Length::Units(ROW_WIDTH));
 
-        Column::with_children(vec![content_active.into(), content_next.into()]).into()
+        Column::with_children(vec![content_active.into(), content_next.into()])
+            .padding([0, 0, 0, ROW_ERROR_WIDTH])
+            .into()
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
