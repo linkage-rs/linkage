@@ -71,7 +71,8 @@ impl Training {
                         )
                         .map(|result| match result {
                             EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
-                                Text::new(e.to_string())
+                                let c = if *e == ' ' { '\u{2591}' } else { *e };
+                                Text::new(c.to_string())
                                     .width(Length::Units(CHAR_WIDTH))
                                     .font(font::MEDIUM)
                                     .color(theme.error)
