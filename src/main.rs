@@ -10,12 +10,10 @@ mod font;
 mod screen;
 
 use data::style;
-use data::{Freq, Theme};
+use data::Theme;
 use screen::Screen;
 
 pub fn main() -> iced::Result {
-    let freq = Freq::load();
-
     let default_font = if let iced::Font::External { bytes, .. } = font::LIGHT {
         Some(bytes)
     } else {
@@ -23,9 +21,6 @@ pub fn main() -> iced::Result {
     };
 
     Linkage::run(Settings {
-        flags: Flags {
-            freq: freq.unwrap_or_default(),
-        },
         default_font,
         exit_on_close_request: false,
         ..Settings::default()
@@ -35,7 +30,6 @@ pub fn main() -> iced::Result {
 #[derive(Debug)]
 struct Linkage {
     should_exit: bool,
-    freq: Freq,
     screen: Screen,
     theme: Theme,
 }
@@ -46,20 +40,14 @@ enum Message {
     Screen(screen::Message),
 }
 
-#[derive(Debug, Default)]
-struct Flags {
-    freq: Freq,
-}
-
 impl Application for Linkage {
     type Executor = executor::Default;
     type Message = Message;
-    type Flags = Flags;
+    type Flags = ();
 
-    fn new(flags: Flags) -> (Linkage, Command<Message>) {
+    fn new(_: ()) -> (Linkage, Command<Message>) {
         let linkage = Linkage {
             should_exit: false,
-            freq: flags.freq,
             screen: Screen::new(),
             theme: Theme::monokai(),
         };
@@ -79,13 +67,13 @@ impl Application for Linkage {
         match message {
             Message::Event(event) => self.handle_event(event),
             Message::Screen(message) => {
-                if let Some((command, event)) = self.screen.update(message, &mut self.freq) {
+                if let Some((command, event)) = self.screen.update(message) {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
                         }
                         screen::Event::Training(user) => {
-                            self.screen = Screen::training(user, &mut self.freq);
+                            self.screen = Screen::training(user);
                             Command::none()
                         }
                     }
@@ -131,7 +119,6 @@ impl Linkage {
 
     fn prepare_close(&mut self) -> Command<Message> {
         println!("Preparing to close.");
-        println!("{:?}", &self.screen);
         self.should_exit = true;
         Command::none()
     }

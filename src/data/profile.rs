@@ -1,8 +1,6 @@
 use super::keyboard::Keyboard;
 use super::training::{Event, Session};
-use super::Freq;
-
-use std::collections::HashSet;
+use super::words;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -15,6 +13,7 @@ pub struct Profile {
     pub name: String,
     pub keyboard: Keyboard,
     events: Vec<Event>,
+    words: words::Setting,
 }
 
 impl User {
@@ -41,7 +40,7 @@ impl Profile {
         self.events.append(events)
     }
 
-    pub fn start_session(&self, freq: &mut Freq) -> Session {
+    pub fn start_session(&self) -> Session {
         let char_set = self
             .events
             .iter()
@@ -50,7 +49,7 @@ impl Profile {
                 _ => None,
             })
             .collect();
-        Session::from_char_set(char_set, freq)
+        Session::from_char_set(&self.words, char_set)
     }
 }
 
@@ -63,6 +62,7 @@ impl Default for Profile {
             name: "Default Profile".to_string(),
             keyboard,
             events,
+            words: words::Setting::default(),
         }
     }
 }

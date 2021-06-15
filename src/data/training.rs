@@ -1,4 +1,4 @@
-use super::Freq;
+use super::words::{self, Words};
 use std::collections::{HashSet, VecDeque};
 use time::{Duration, Instant, OffsetDateTime};
 
@@ -33,8 +33,8 @@ pub enum Event {
 
 #[derive(Debug, Clone)]
 pub struct Session {
-    /// The character choices
-    char_set: HashSet<char>,
+    /// Words to choose from
+    words: Words,
     /// The instant when the last hit was completed
     baseline: Instant,
     /// The current hit we're working on
@@ -64,20 +64,20 @@ pub struct Hit {
 }
 
 impl Session {
-    // TODO: Actually use a character set..
-    pub fn from_char_set(char_set: HashSet<char>, freq: &mut Freq) -> Self {
-        let line = freq.random_line(&char_set, CHARS_PER_LINE);
+    pub fn from_char_set(setting: &words::Setting, char_set: HashSet<char>) -> Self {
+        let mut words = setting.get_words(char_set);
+        let line = words.line(CHARS_PER_LINE);
 
         let mut targets: VecDeque<char> = line.chars().collect::<Vec<char>>().into();
         let first_letter = targets.pop_front().unwrap_or(' ');
 
         let mut next_lines = Vec::new();
         while next_lines.len() < NEXT_LINES {
-            next_lines.push(freq.random_line(&char_set, CHARS_PER_LINE));
+            next_lines.push(words.line(CHARS_PER_LINE));
         }
 
         Self {
-            char_set,
+            words,
             baseline: Instant::now(),
             active_hit: Hit::new(first_letter, ' '),
             targets,
@@ -87,7 +87,7 @@ impl Session {
         }
     }
 
-    pub fn apply_char(&mut self, c: char, freq: &mut Freq) -> Option<Vec<Event>> {
+    pub fn apply_char(&mut self, c: char) -> Option<Vec<Event>> {
         if self.errors.is_empty() && c == self.active_hit.target {
             self.active_hit.finalize(self.baseline);
             self.hits.push(self.active_hit.clone());
@@ -97,9 +97,7 @@ impl Session {
                 self.active_hit = self.active_hit.next(next_target);
             } else {
                 while self.next_lines.len() < NEXT_LINES + 1 {
-                    // TODO: Actually use a character set for the line..
-                    self.next_lines
-                        .push(freq.random_line(&self.char_set, CHARS_PER_LINE));
+                    self.next_lines.push(self.words.line(CHARS_PER_LINE));
                 }
                 for c in self.next_lines.remove(0).chars() {
                     self.targets.push_back(c);

@@ -1,4 +1,4 @@
-use crate::data::{Freq, Theme, User};
+use crate::data::{Theme, User};
 use iced::{Column, Command, Element, Subscription};
 
 pub mod loading;
@@ -34,15 +34,11 @@ impl Screen {
         Self::Loading(loading::Loading::new())
     }
 
-    pub fn training(user: User, freq: &mut Freq) -> Self {
-        Self::Training(training::Training::new(user, freq))
+    pub fn training(user: User) -> Self {
+        Self::Training(training::Training::new(user))
     }
 
-    pub fn update(
-        &mut self,
-        message: Message,
-        freq: &mut Freq,
-    ) -> Option<(Command<Message>, Event)> {
+    pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
         match (self, message) {
             (Screen::Loading(loading), Message::Loading(message)) => {
                 match loading.update(message) {
@@ -55,7 +51,7 @@ impl Screen {
                 }
             }
             (Screen::Training(training), Message::Training(message)) => {
-                match training.update(message, freq) {
+                match training.update(message) {
                     Some((command, event)) => match event {
                         training::Event::ExitRequested => {
                             Some((command.map(Message::Training), Event::ExitRequested))

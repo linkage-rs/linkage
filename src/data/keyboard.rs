@@ -99,27 +99,27 @@ impl Layout {
                 'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
             ],
             Layout::Dvorak => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
             Layout::DvorakOrtholinear => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
             Layout::Qwerty => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
             Layout::QwertyOrtholinear => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
             Layout::Workman => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
             Layout::WorkmanOrtholinear => vec![
-                'f', 'j', 'e', 'a', 'k', 'l', 's', 'u', 'd', 'i', 'r', 'o', 't', 'm', 'c', 'y',
+                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
                 'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
             ],
         }

@@ -1,5 +1,5 @@
-use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
-use crate::data::{Freq, Theme, User};
+use crate::data::training::{Session, CHARS_PER_LINE};
+use crate::data::{Theme, User};
 use crate::font;
 use iced::keyboard::{self, KeyCode};
 use iced::{Column, Command, Element, Length, Row, Space, Subscription, Text, VerticalAlignment};
@@ -23,15 +23,15 @@ pub enum Event {
     ExitRequested,
 }
 
-const FONT_SIZE: u16 = 16;
+// const FONT_SIZE: u16 = 16;
 const CHAR_WIDTH: u16 = 10;
-const ROW_CHARS: u16 = 60;
+const ROW_CHARS: u16 = CHARS_PER_LINE as u16 + 10;
 const ROW_WIDTH: u16 = CHAR_WIDTH * ROW_CHARS;
 const LINE_SPACE: u16 = 10;
 
 impl Training {
-    pub fn new(user: User, freq: &mut Freq) -> Self {
-        let session = user.profile().start_session(freq);
+    pub fn new(user: User) -> Self {
+        let session = user.profile().start_session();
         Self {
             user,
             session,
@@ -39,13 +39,9 @@ impl Training {
         }
     }
 
-    pub fn update(
-        &mut self,
-        message: Message,
-        freq: &mut Freq,
-    ) -> Option<(Command<Message>, Event)> {
+    pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
         match message {
-            Message::KeyboardEvent(keyboard_event) => self.handle_keyboard(keyboard_event, freq),
+            Message::KeyboardEvent(keyboard_event) => self.handle_keyboard(keyboard_event),
             _ => None,
         }
     }
@@ -154,7 +150,6 @@ impl Training {
     pub fn handle_keyboard(
         &mut self,
         event: iced::keyboard::Event,
-        freq: &mut Freq,
     ) -> Option<(Command<Message>, Event)> {
         match event {
             keyboard::Event::ModifiersChanged(modifiers) => {
@@ -167,7 +162,7 @@ impl Training {
                 modifiers,
             } => match key_code {
                 KeyCode::Space => {
-                    if let Some(mut events) = self.session.apply_char(' ', freq) {
+                    if let Some(mut events) = self.session.apply_char(' ') {
                         self.user.profile_mut().add_events(&mut events);
                     }
                     None
@@ -186,8 +181,7 @@ impl Training {
             keyboard::Event::CharacterReceived(c)
                 if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
             {
-                println!("CharacterReceived('{}')", c);
-                if let Some(mut events) = self.session.apply_char(c, freq) {
+                if let Some(mut events) = self.session.apply_char(c) {
                     self.user.profile_mut().add_events(&mut events);
                 }
                 None

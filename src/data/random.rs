@@ -7,16 +7,16 @@ use std::collections::{HashMap, HashSet};
 const SCALAR: u16 = 10000;
 const EN_FREQ: &[u8] = include_bytes!("../../data/en/freq.json");
 
-#[derive(Debug)]
-pub struct Freq {
+#[derive(Debug, Clone)]
+pub struct Random {
     letter: Vec<(u16, char)>,
     next_letter: HashMap<char, Vec<(u16, char)>>,
     dist: Uniform<u16>,
     rng: ThreadRng,
 }
 
-impl Freq {
-    pub fn load() -> Option<Freq> {
+impl Random {
+    pub fn load() -> Random {
         #[derive(Debug, Deserialize)]
         struct FreqData {
             #[serde(rename = "letter_frequency")]
@@ -25,8 +25,8 @@ impl Freq {
             next_letter: HashMap<String, HashMap<String, f32>>,
         }
 
-        let freq_str = std::str::from_utf8(EN_FREQ).ok()?;
-        let freq_data: FreqData = serde_json::from_str(freq_str).ok()?;
+        let freq_str = std::str::from_utf8(EN_FREQ).expect("Loading frequency data");
+        let freq_data: FreqData = serde_json::from_str(freq_str).expect("Parse frequency JSON");
 
         let next_letter: HashMap<char, Vec<(u16, char)>> = freq_data
             .next_letter
@@ -36,20 +36,18 @@ impl Freq {
             })
             .collect();
 
-        let freq = Freq {
+        Random {
             letter: cumulative(freq_data.letter),
             next_letter,
             dist: Uniform::new_inclusive(0, SCALAR),
             rng: rand::thread_rng(),
-        };
-
-        Some(freq)
+        }
     }
 
-    pub fn random_line(&mut self, char_set: &HashSet<char>, min_length: usize) -> String {
+    pub fn line(&mut self, char_set: &HashSet<char>, min_length: usize) -> String {
         let mut line = String::new();
         while line.chars().count() < min_length {
-            let word = self.random_word(char_set);
+            let word = self.word(char_set);
             line.push_str(&word);
             line.push(' ');
         }
@@ -58,9 +56,9 @@ impl Freq {
 
     /// Generate a random word from this frequency distribution. Parameters are
     /// word length and available character set.
-    pub fn random_word(&mut self, char_set: &HashSet<char>) -> String {
-        let mut last_letter = self.random_first_letter(char_set);
-        let Freq {
+    pub fn word(&mut self, char_set: &HashSet<char>) -> String {
+        let mut last_letter = self.first_letter(char_set);
+        let Random {
             next_letter,
             dist,
             rng,
@@ -89,8 +87,8 @@ impl Freq {
         word
     }
 
-    fn random_first_letter(&mut self, char_set: &HashSet<char>) -> char {
-        let Freq {
+    fn first_letter(&mut self, char_set: &HashSet<char>) -> char {
+        let Random {
             letter, dist, rng, ..
         } = self;
         loop {
@@ -103,9 +101,9 @@ impl Freq {
     }
 }
 
-impl Default for Freq {
+impl Default for Random {
     fn default() -> Self {
-        Freq {
+        Random {
             letter: Vec::new(),
             next_letter: HashMap::new(),
             dist: Uniform::new_inclusive(0, SCALAR),
