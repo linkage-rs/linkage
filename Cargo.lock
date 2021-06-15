@@ -1107,7 +1107,7 @@ dependencies = [
 [[package]]
 name = "iced"
 version = "0.3.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1120,12 +1120,12 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.4.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 
 [[package]]
 name = "iced_futures"
 version = "0.3.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "futures",
  "log",
@@ -1135,7 +1135,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.2.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "bytemuck",
  "font-kit",
@@ -1149,7 +1149,7 @@ dependencies = [
 [[package]]
 name = "iced_native"
 version = "0.4.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1161,7 +1161,7 @@ dependencies = [
 [[package]]
 name = "iced_style"
 version = "0.3.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "iced_core",
 ]
@@ -1169,7 +1169,7 @@ dependencies = [
 [[package]]
 name = "iced_web"
 version = "0.4.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "dodrio",
  "iced_core",
@@ -1185,7 +1185,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.4.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "bytemuck",
  "futures",
@@ -1202,7 +1202,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.3.0"
-source = "git+https://github.com/hecrj/iced.git?rev=e292821c3780fc5a57c835815efc7a232ce4dc32#e292821c3780fc5a57c835815efc7a232ce4dc32"
+source = "git+https://github.com/hecrj/iced.git?rev=e68da229b384fbe78514dab0b13c8eb4637f4f5d#e68da229b384fbe78514dab0b13c8eb4637f4f5d"
 dependencies = [
  "iced_futures",
  "iced_graphics",
