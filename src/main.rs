@@ -8,8 +8,8 @@ use iced_native::window;
 mod data;
 mod font;
 mod screen;
+mod style;
 
-use data::style;
 use data::Theme;
 use screen::Screen;
 

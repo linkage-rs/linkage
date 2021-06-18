@@ -2,7 +2,6 @@ pub mod dictionary;
 pub mod keyboard;
 pub mod profile;
 pub mod random;
-pub mod style;
 pub mod theme;
 pub mod training;
 pub mod words;
