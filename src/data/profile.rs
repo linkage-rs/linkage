@@ -1,5 +1,5 @@
 use super::keyboard::Keyboard;
-use super::training::{Event, Session};
+use super::training::{Line, Session, State};
 use super::words;
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct User {
 pub struct Profile {
     pub name: String,
     pub keyboard: Keyboard,
-    events: Vec<Event>,
+    state: State,
     words: words::Setting,
 }
 
@@ -36,32 +36,27 @@ impl Default for User {
 }
 
 impl Profile {
-    pub fn add_events(&mut self, events: &mut Vec<Event>) {
-        self.events.append(events)
+    pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
+        self.state
+            .add_line(line)
+            .map(|char_set| self.words.get_words(char_set))
     }
 
     pub fn start_session(&self) -> Session {
-        let char_set = self
-            .events
-            .iter()
-            .filter_map(|event| match event {
-                Event::Unlock { letter } => Some(*letter),
-                _ => None,
-            })
-            .collect();
-        Session::from_char_set(&self.words, char_set)
+        Session::new(&self.words, &self.state)
     }
 }
 
 impl Default for Profile {
     fn default() -> Self {
         let keyboard = Keyboard::default();
-        let events = keyboard.initial_events();
+        let chars = keyboard.initial_chars();
+        let state = State::new(chars);
 
         Self {
             name: "Default Profile".to_string(),
             keyboard,
-            events,
+            state,
             words: words::Setting::default(),
         }
     }

@@ -1,8 +1,8 @@
+use super::CharSet;
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use serde::Deserialize;
-
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 const SCALAR: u16 = 10000;
 const EN_FREQ: &[u8] = include_bytes!("../../data/en/freq.json");
@@ -44,7 +44,7 @@ impl Random {
         }
     }
 
-    pub fn line(&mut self, char_set: &HashSet<char>, min_length: usize) -> String {
+    pub fn line(&mut self, char_set: &CharSet, min_length: usize) -> String {
         let mut line = String::new();
         while line.chars().count() < min_length {
             let word = self.word(char_set);
@@ -56,7 +56,7 @@ impl Random {
 
     /// Generate a random word from this frequency distribution. Parameters are
     /// word length and available character set.
-    pub fn word(&mut self, char_set: &HashSet<char>) -> String {
+    pub fn word(&mut self, char_set: &CharSet) -> String {
         let mut last_letter = self.first_letter(char_set);
         let Random {
             next_letter,
@@ -87,7 +87,7 @@ impl Random {
         word
     }
 
-    fn first_letter(&mut self, char_set: &HashSet<char>) -> char {
+    fn first_letter(&mut self, char_set: &CharSet) -> char {
         let Random {
             letter, dist, rng, ..
         } = self;
@@ -133,7 +133,7 @@ fn cumulative(mapping: HashMap<String, f32>) -> Vec<(u16, char)> {
         .collect()
 }
 
-fn sample_cumulative(value: u16, mapping: &[(u16, char)], char_set: &HashSet<char>) -> char {
+fn sample_cumulative(value: u16, mapping: &[(u16, char)], char_set: &CharSet) -> char {
     if let Some(c) = mapping
         .iter()
         .filter(|(_, c)| char_set.contains(c))

@@ -165,8 +165,10 @@ impl Training {
                 modifiers,
             } => match key_code {
                 KeyCode::Space => {
-                    if let Some(mut events) = self.session.apply_char(' ') {
-                        self.user.profile_mut().add_events(&mut events);
+                    if let Some(line) = self.session.apply_char(' ') {
+                        if let Some(words) = self.user.profile_mut().add_line(line) {
+                            self.session.update_words(words)
+                        }
                     }
                     None
                 }
@@ -184,8 +186,10 @@ impl Training {
             keyboard::Event::CharacterReceived(c)
                 if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
             {
-                if let Some(mut events) = self.session.apply_char(c) {
-                    self.user.profile_mut().add_events(&mut events);
+                if let Some(line) = self.session.apply_char(c) {
+                    if let Some(words) = self.user.profile_mut().add_line(line) {
+                        self.session.update_words(words)
+                    }
                 }
                 None
             }

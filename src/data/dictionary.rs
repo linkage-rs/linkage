@@ -1,7 +1,6 @@
+use super::CharSet;
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
-
-use std::collections::HashSet;
 
 const EN_WORDS: &[u8] = include_bytes!("../../data/en/popular.txt");
 
@@ -30,7 +29,7 @@ impl Dictionary {
 
     /// Get subset of the wordlist limited to words containing only the
     /// provided characters
-    pub fn char_limited(&self, char_set: &HashSet<char>) -> Self {
+    pub fn char_limited(&self, char_set: &CharSet) -> Self {
         let words: Vec<String> = self
             .words
             .iter()

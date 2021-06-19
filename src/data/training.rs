@@ -1,10 +1,13 @@
 use super::words::{self, Words};
-use std::collections::{HashSet, VecDeque};
+use super::CharSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 use time::{Duration, Instant, OffsetDateTime};
 
 pub const CHARS_PER_LINE: usize = 52;
 pub const NEXT_LINES: usize = 2;
 pub const MAX_ERRORS: usize = 5;
+pub const NUM_RECENT_TIMINGS: usize = 1000;
+pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 50.0);
 
 /// Event log messages. Apply all messages in order to return to the current
 /// training state. Hit events are rolled up into Checkpoint messages if we
@@ -12,16 +15,12 @@ pub const MAX_ERRORS: usize = 5;
 #[derive(Debug, Clone)]
 pub enum Event {
     /// New letter added to our training set
-    Unlock { letter: char },
-    /// A line of training completed
-    Line {
-        hits: Vec<Hit>,
-        time: OffsetDateTime,
-    },
+    Unlock { letter: char, time: OffsetDateTime },
     /// Computed progress point
     Progress {
         time: OffsetDateTime,
         total_time_training: Duration,
+        total_lines_typed: u64,
         total_characters_typed: u64,
         top_speed_wpm: f64,
         average_speed_wpm: f64,
@@ -49,6 +48,13 @@ pub struct Session {
     pub next_lines: Vec<String>,
 }
 
+/// A line of training completed
+#[derive(Debug, Clone)]
+pub struct Line {
+    hits: Vec<Hit>,
+    time: OffsetDateTime,
+}
+
 /// A successful keystroke
 #[derive(Debug, Clone)]
 pub struct Hit {
@@ -57,15 +63,15 @@ pub struct Hit {
     /// The previous character typed
     prev: char,
     /// Incorrect keys hit instead of the target
-    misses: HashSet<char>,
+    misses: CharSet,
     /// Time required to hit the target. Limited to some maximum threshold so
     /// we can leave and come back to training without blowing up any averages.
     dt: Duration,
 }
 
 impl Session {
-    pub fn from_char_set(setting: &words::Setting, char_set: HashSet<char>) -> Self {
-        let mut words = setting.get_words(char_set);
+    pub fn new(setting: &words::Setting, state: &State) -> Self {
+        let mut words = setting.get_words(state.char_set());
         let line = words.line(CHARS_PER_LINE);
 
         let mut targets: VecDeque<char> = line.chars().collect::<Vec<char>>().into();
@@ -87,7 +93,7 @@ impl Session {
         }
     }
 
-    pub fn apply_char(&mut self, c: char) -> Option<Vec<Event>> {
+    pub fn apply_char(&mut self, c: char) -> Option<Line> {
         if self.errors.is_empty() && c == self.active_hit.target {
             self.active_hit.finalize(self.baseline);
             self.hits.push(self.active_hit.clone());
@@ -106,7 +112,7 @@ impl Session {
                 let next_target = self.targets.pop_front().unwrap_or(' ');
                 self.active_hit = self.active_hit.next(next_target);
 
-                let event = Event::Line {
+                let line = Line {
                     hits: self.hits.clone(),
                     time: OffsetDateTime::now_utc(),
                 };
@@ -115,7 +121,7 @@ impl Session {
                 // TODO: Check if we need to unlock new characters or generate
                 // a Progress event
 
-                return Some(vec![event]);
+                return Some(line);
             }
         } else {
             self.active_hit.add_miss(c);
@@ -132,6 +138,10 @@ impl Session {
         if !self.errors.is_empty() {
             self.errors.pop();
         }
+    }
+
+    pub fn update_words(&mut self, words: Words) {
+        self.words = words;
     }
 }
 
@@ -168,5 +178,69 @@ impl Hit {
 
     pub fn is_dirty(&self) -> bool {
         !self.misses.is_empty()
+    }
+}
+
+pub struct Checkpoint {
+    u_32: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct State {
+    /// Which characters are in our set
+    char_set: CharSet,
+    /// How long it took to type each letter, recent sample
+    timings: HashMap<char, VecDeque<Duration>>,
+    /// Smoothed clean proportion
+    clean: HashMap<char, f32>,
+    /// Event log
+    events: Vec<Event>,
+}
+
+impl State {
+    pub fn new(chars: Vec<char>) -> Self {
+        let char_set = chars.iter().cloned().collect();
+        let events = chars
+            .iter()
+            .map(|&letter| Event::Unlock {
+                letter,
+                time: OffsetDateTime::now_utc(),
+            })
+            .collect();
+
+        Self {
+            char_set,
+            timings: HashMap::new(),
+            clean: HashMap::new(),
+            events,
+        }
+    }
+
+    fn char_set(&self) -> CharSet {
+        self.char_set.clone()
+    }
+
+    /// Add a line of completed training. Optionally returns a new char set.
+    pub fn add_line(&mut self, line: Line) -> Option<CharSet> {
+        for hit in line.hits {
+            if let Some(timings) = self.timings.get_mut(&hit.target) {
+                timings.push_back(hit.dt);
+                while timings.len() > NUM_RECENT_TIMINGS {
+                    timings.pop_front();
+                }
+            } else {
+                self.timings.insert(hit.target, vec![hit.dt].into());
+            }
+
+            let clean_signal = if hit.misses.is_empty() { 1.0 } else { 0.0 };
+            if let Some(clean) = self.clean.get_mut(&hit.target) {
+                *clean = clean_signal * CLEAN_ALPHA_COEFF + *clean * (1.0 - CLEAN_ALPHA_COEFF);
+            } else {
+                self.clean
+                    .insert(hit.target, clean_signal * CLEAN_ALPHA_COEFF);
+            }
+        }
+
+        None
     }
 }

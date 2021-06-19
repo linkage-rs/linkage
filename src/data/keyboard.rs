@@ -1,4 +1,4 @@
-use super::training::Event;
+use super::CharSet;
 
 #[derive(Debug, Clone)]
 pub struct Keyboard {
@@ -30,13 +30,18 @@ impl Default for Keyboard {
 }
 
 impl Keyboard {
-    pub fn initial_events(&self) -> Vec<Event> {
+    pub fn initial_chars(&self) -> Vec<char> {
+        self.layout.letter_order()[0..6].to_vec()
+    }
+
+    /// Get the next character in the list, given the current character set
+    pub fn next_char(&self, char_set: CharSet) -> Option<char> {
         self.layout
             .letter_order()
             .iter()
-            .take(6)
-            .map(|&letter| Event::Unlock { letter })
-            .collect()
+            .filter(|&letter| !char_set.contains(&letter))
+            .cloned()
+            .next()
     }
 }
 

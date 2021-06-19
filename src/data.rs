@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 pub mod dictionary;
 pub mod keyboard;
 pub mod profile;
@@ -9,3 +11,5 @@ pub mod words;
 pub use profile::User;
 pub use theme::Theme;
 pub use words::Words;
+
+pub type CharSet = HashSet<char>;

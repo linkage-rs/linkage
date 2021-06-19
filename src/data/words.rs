@@ -1,7 +1,6 @@
 use super::dictionary::Dictionary;
 use super::random::Random;
-
-use std::collections::HashSet;
+use super::CharSet;
 
 #[derive(Debug, Clone)]
 pub enum Setting {
@@ -16,7 +15,7 @@ impl Default for Setting {
 }
 
 impl Setting {
-    pub fn get_words(&self, char_set: HashSet<char>) -> Words {
+    pub fn get_words(&self, char_set: CharSet) -> Words {
         match self {
             Setting::Dictionary => Words::dictionary(char_set),
             Setting::Random => Words::random(char_set),
@@ -32,12 +31,12 @@ pub enum Words {
     },
     Random {
         generator: Random,
-        char_set: HashSet<char>,
+        char_set: CharSet,
     },
 }
 
 impl Words {
-    pub fn dictionary(char_set: HashSet<char>) -> Self {
+    pub fn dictionary(char_set: CharSet) -> Self {
         let dictionary = Dictionary::load();
         let char_limited = dictionary.char_limited(&char_set);
         Words::Dictionary {
@@ -46,7 +45,7 @@ impl Words {
         }
     }
 
-    pub fn random(char_set: HashSet<char>) -> Self {
+    pub fn random(char_set: CharSet) -> Self {
         Words::Random {
             generator: Random::load(),
             char_set,
