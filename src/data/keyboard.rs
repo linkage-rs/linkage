@@ -35,7 +35,7 @@ impl Keyboard {
     }
 
     /// Get the next character in the list, given the current character set
-    pub fn next_char(&self, char_set: CharSet) -> Option<char> {
+    pub fn next_char(&self, char_set: &CharSet) -> Option<char> {
         self.layout
             .letter_order()
             .iter()

@@ -38,7 +38,7 @@ impl Default for User {
 impl Profile {
     pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
         self.state
-            .add_line(line)
+            .add_line(line, &self.keyboard)
             .map(|char_set| self.words.get_words(char_set))
     }
 

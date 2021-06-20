@@ -1,3 +1,4 @@
+use super::keyboard::Keyboard;
 use super::words::{self, Words};
 use super::CharSet;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -8,6 +9,7 @@ pub const NEXT_LINES: usize = 2;
 pub const MAX_ERRORS: usize = 5;
 pub const NUM_RECENT_TIMINGS: usize = 1000;
 pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 50.0);
+pub const MIN_CLEAN_PCT: f32 = 0.75;
 
 /// Event log messages. Apply all messages in order to return to the current
 /// training state. Hit events are rolled up into Checkpoint messages if we
@@ -103,6 +105,9 @@ impl Session {
                 self.active_hit = self.active_hit.next(next_target);
             } else {
                 while self.next_lines.len() < NEXT_LINES + 1 {
+                    // TODO: Weighted character set selection:
+                    // - More words with characters that are our lower hit percentage
+                    // - Characters that are our slowest
                     self.next_lines.push(self.words.line(CHARS_PER_LINE));
                 }
                 for c in self.next_lines.remove(0).chars() {
@@ -117,9 +122,6 @@ impl Session {
                     time: OffsetDateTime::now_utc(),
                 };
                 self.hits.clear();
-
-                // TODO: Check if we need to unlock new characters or generate
-                // a Progress event
 
                 return Some(line);
             }
@@ -200,13 +202,7 @@ pub struct State {
 impl State {
     pub fn new(chars: Vec<char>) -> Self {
         let char_set = chars.iter().cloned().collect();
-        let events = chars
-            .iter()
-            .map(|&letter| Event::Unlock {
-                letter,
-                time: OffsetDateTime::now_utc(),
-            })
-            .collect();
+        let events = chars.iter().map(|&letter| Event::unlock(letter)).collect();
 
         Self {
             char_set,
@@ -221,7 +217,7 @@ impl State {
     }
 
     /// Add a line of completed training. Optionally returns a new char set.
-    pub fn add_line(&mut self, line: Line) -> Option<CharSet> {
+    pub fn add_line(&mut self, line: Line, keyboard: &Keyboard) -> Option<CharSet> {
         for hit in line.hits {
             if let Some(timings) = self.timings.get_mut(&hit.target) {
                 timings.push_back(hit.dt);
@@ -241,6 +237,27 @@ impl State {
             }
         }
 
+        let all_clean = self.clean.iter().all(|(_, &v)| v >= MIN_CLEAN_PCT);
+
+        if all_clean {
+            if let Some(letter) = keyboard.next_char(&self.char_set) {
+                self.char_set.insert(letter);
+                self.clean.insert(letter, 0.0);
+                self.events.push(Event::unlock(letter));
+
+                return Some(self.char_set.clone());
+            }
+        }
+
         None
+    }
+}
+
+impl Event {
+    fn unlock(letter: char) -> Self {
+        Self::Unlock {
+            letter,
+            time: OffsetDateTime::now_utc(),
+        }
     }
 }
