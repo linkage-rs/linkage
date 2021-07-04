@@ -11,25 +11,35 @@ pub const NUM_RECENT_TIMINGS: usize = 1000;
 pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 50.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
 
-/// Event log messages. Apply all messages in order to return to the current
-/// training state. Hit events are rolled up into Checkpoint messages if we
-/// need to compact the log.
+#[derive(Debug, Clone)]
+pub struct State {
+    /// Which characters are in our set
+    char_set: CharSet,
+    /// How long it took to type each letter, recent sample
+    timings: HashMap<char, VecDeque<Duration>>,
+    /// Smoothed clean proportion
+    clean: HashMap<char, f32>,
+    /// Event log
+    events: Vec<Event>,
+}
+
+/// Event log messages that record when certain state transitions occurred.
 #[derive(Debug, Clone)]
 pub enum Event {
     /// New letter added to our training set
     Unlock { letter: char, time: OffsetDateTime },
-    /// Computed progress point
-    Progress {
-        time: OffsetDateTime,
-        total_time_training: Duration,
-        total_lines_typed: u64,
-        total_characters_typed: u64,
-        top_speed_wpm: f64,
-        average_speed_wpm: f64,
-        num_characters: u8,
-    },
-    /// Hit statistical rollup. Purging Line events before a Checkpoint is safe.
-    Checkpoint {},
+    // /// Computed progress point
+    // Progress {
+    //     time: OffsetDateTime,
+    //     total_time_training: Duration,
+    //     total_lines_typed: u64,
+    //     total_characters_typed: u64,
+    //     top_speed_wpm: f64,
+    //     average_speed_wpm: f64,
+    //     num_characters: u8,
+    // },
+    // /// Statistical rollup
+    // Checkpoint {},
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +79,69 @@ pub struct Hit {
     /// Time required to hit the target. Limited to some maximum threshold so
     /// we can leave and come back to training without blowing up any averages.
     dt: Duration,
+}
+
+impl State {
+    pub fn new(chars: Vec<char>) -> Self {
+        let char_set = chars.iter().cloned().collect();
+        let events = chars.iter().map(|&letter| Event::unlock(letter)).collect();
+
+        Self {
+            char_set,
+            timings: HashMap::new(),
+            clean: HashMap::new(),
+            events,
+        }
+    }
+
+    fn char_set(&self) -> CharSet {
+        self.char_set.clone()
+    }
+
+    /// Add a line of completed training. Optionally returns a new char set.
+    pub fn add_line(&mut self, line: Line, keyboard: &Keyboard) -> Option<CharSet> {
+        for hit in line.hits {
+            if let Some(timings) = self.timings.get_mut(&hit.target) {
+                timings.push_back(hit.dt);
+                while timings.len() > NUM_RECENT_TIMINGS {
+                    timings.pop_front();
+                }
+            } else {
+                self.timings.insert(hit.target, vec![hit.dt].into());
+            }
+
+            let clean_signal = if hit.misses.is_empty() { 1.0 } else { 0.0 };
+            if let Some(clean) = self.clean.get_mut(&hit.target) {
+                *clean = clean_signal * CLEAN_ALPHA_COEFF + *clean * (1.0 - CLEAN_ALPHA_COEFF);
+            } else {
+                self.clean
+                    .insert(hit.target, clean_signal * CLEAN_ALPHA_COEFF);
+            }
+        }
+
+        let all_clean = self.clean.iter().all(|(_, &v)| v >= MIN_CLEAN_PCT);
+
+        if all_clean {
+            if let Some(letter) = keyboard.next_char(&self.char_set) {
+                self.char_set.insert(letter);
+                self.clean.insert(letter, 0.0);
+                self.events.push(Event::unlock(letter));
+
+                return Some(self.char_set.clone());
+            }
+        }
+
+        None
+    }
+}
+
+impl Event {
+    fn unlock(letter: char) -> Self {
+        Self::Unlock {
+            letter,
+            time: OffsetDateTime::now_utc(),
+        }
+    }
 }
 
 impl Session {
@@ -180,84 +253,5 @@ impl Hit {
 
     pub fn is_dirty(&self) -> bool {
         !self.misses.is_empty()
-    }
-}
-
-pub struct Checkpoint {
-    u_32: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct State {
-    /// Which characters are in our set
-    char_set: CharSet,
-    /// How long it took to type each letter, recent sample
-    timings: HashMap<char, VecDeque<Duration>>,
-    /// Smoothed clean proportion
-    clean: HashMap<char, f32>,
-    /// Event log
-    events: Vec<Event>,
-}
-
-impl State {
-    pub fn new(chars: Vec<char>) -> Self {
-        let char_set = chars.iter().cloned().collect();
-        let events = chars.iter().map(|&letter| Event::unlock(letter)).collect();
-
-        Self {
-            char_set,
-            timings: HashMap::new(),
-            clean: HashMap::new(),
-            events,
-        }
-    }
-
-    fn char_set(&self) -> CharSet {
-        self.char_set.clone()
-    }
-
-    /// Add a line of completed training. Optionally returns a new char set.
-    pub fn add_line(&mut self, line: Line, keyboard: &Keyboard) -> Option<CharSet> {
-        for hit in line.hits {
-            if let Some(timings) = self.timings.get_mut(&hit.target) {
-                timings.push_back(hit.dt);
-                while timings.len() > NUM_RECENT_TIMINGS {
-                    timings.pop_front();
-                }
-            } else {
-                self.timings.insert(hit.target, vec![hit.dt].into());
-            }
-
-            let clean_signal = if hit.misses.is_empty() { 1.0 } else { 0.0 };
-            if let Some(clean) = self.clean.get_mut(&hit.target) {
-                *clean = clean_signal * CLEAN_ALPHA_COEFF + *clean * (1.0 - CLEAN_ALPHA_COEFF);
-            } else {
-                self.clean
-                    .insert(hit.target, clean_signal * CLEAN_ALPHA_COEFF);
-            }
-        }
-
-        let all_clean = self.clean.iter().all(|(_, &v)| v >= MIN_CLEAN_PCT);
-
-        if all_clean {
-            if let Some(letter) = keyboard.next_char(&self.char_set) {
-                self.char_set.insert(letter);
-                self.clean.insert(letter, 0.0);
-                self.events.push(Event::unlock(letter));
-
-                return Some(self.char_set.clone());
-            }
-        }
-
-        None
-    }
-}
-
-impl Event {
-    fn unlock(letter: char) -> Self {
-        Self::Unlock {
-            letter,
-            time: OffsetDateTime::now_utc(),
-        }
     }
 }
