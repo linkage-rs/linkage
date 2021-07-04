@@ -1,4 +1,5 @@
-use crate::data::{Theme, User};
+use crate::data::user;
+use crate::data::Theme;
 use iced::{Column, Command, Element, Subscription};
 
 pub mod loading;
@@ -26,7 +27,7 @@ pub enum Message {
 
 pub enum Event {
     ExitRequested,
-    Training(User),
+    Training(user::List),
 }
 
 impl Screen {
@@ -34,8 +35,8 @@ impl Screen {
         Self::Loading(loading::Loading::new())
     }
 
-    pub fn training(user: User) -> Self {
-        Self::Training(training::Training::new(user))
+    pub fn training(users: user::List) -> Self {
+        Self::Training(training::Training::new(users))
     }
 
     pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
@@ -43,8 +44,8 @@ impl Screen {
             (Screen::Loading(loading), Message::Loading(message)) => {
                 match loading.update(message) {
                     Some(event) => match event {
-                        loading::Event::Load(user) => {
-                            Some((Command::none(), Event::Training(user)))
+                        loading::Event::Load(users) => {
+                            Some((Command::none(), Event::Training(users)))
                         }
                     },
                     _ => None,

@@ -6,9 +6,10 @@ pub mod profile;
 pub mod random;
 pub mod theme;
 pub mod training;
+pub mod user;
 pub mod words;
+mod zipper_list;
 
-pub use profile::User;
 pub use theme::Theme;
 pub use words::Words;
 

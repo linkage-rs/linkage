@@ -1,5 +1,6 @@
 use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
-use crate::data::{Theme, User};
+use crate::data::user;
+use crate::data::Theme;
 use crate::font;
 use iced::keyboard::{self, KeyCode};
 use iced::{Column, Command, Element, Length, Row, Space, Subscription, Text, VerticalAlignment};
@@ -7,8 +8,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 #[derive(Debug)]
 pub struct Training {
-    user: User,
-    session: Session,
+    users: user::List,
     modifiers: keyboard::Modifiers,
 }
 
@@ -30,11 +30,9 @@ const ROW_ERROR_WIDTH: u16 = (MAX_ERRORS - 1) as u16 * CHAR_WIDTH;
 const LINE_SPACE: u16 = 10;
 
 impl Training {
-    pub fn new(user: User) -> Self {
-        let session = user.profile().start_session();
+    pub fn new(users: user::List) -> Self {
         Self {
-            user,
-            session,
+            users,
             modifiers: keyboard::Modifiers::default(),
         }
     }
@@ -48,7 +46,7 @@ impl Training {
 
     pub fn view(&mut self, theme: &Theme) -> Element<Message> {
         let active_line = Row::with_children(
-            self.session
+            self.session()
                 .hits
                 .iter()
                 .map(|hit| {
@@ -62,12 +60,12 @@ impl Training {
                         })
                 })
                 .chain(
-                    self.session
+                    self.session()
                         .errors
                         .iter()
                         .zip_longest(
-                            std::iter::once(&self.session.active_hit.target())
-                                .chain(self.session.targets.iter()),
+                            std::iter::once(&self.session().active_hit.target())
+                                .chain(self.session().targets.iter()),
                         )
                         .map(|result| match result {
                             EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
@@ -86,9 +84,9 @@ impl Training {
                 .collect(),
         );
 
-        let target_indicator: Element<_> = if self.session.errors.is_empty() {
+        let target_indicator: Element<_> = if self.session().errors.is_empty() {
             Row::with_children(vec![
-                Space::with_width(Length::Units(self.session.hits.len() as u16 * CHAR_WIDTH))
+                Space::with_width(Length::Units(self.session().hits.len() as u16 * CHAR_WIDTH))
                     .into(),
                 Text::new("\u{2015}")
                     .width(Length::Units(CHAR_WIDTH))
@@ -108,7 +106,7 @@ impl Training {
             .push(target_indicator);
 
         let content_next = Column::with_children(
-            self.session
+            self.session()
                 .next_lines
                 .iter()
                 .map(|line| {
@@ -165,16 +163,16 @@ impl Training {
                 modifiers,
             } => match key_code {
                 KeyCode::Space => {
-                    if let Some(line) = self.session.apply_char(' ') {
-                        if let Some(words) = self.user.profile_mut().add_line(line) {
-                            self.session.update_words(words)
+                    if let Some(line) = self.session_mut().apply_char(' ') {
+                        if let Some(words) = self.users.profile_mut().add_line(line) {
+                            self.session_mut().update_words(words)
                         }
                     }
                     None
                 }
                 KeyCode::Escape => None,
                 KeyCode::Backspace => {
-                    self.session.backspace();
+                    self.session_mut().backspace();
                     None
                 }
                 #[cfg(target_os = "macos")]
@@ -186,14 +184,22 @@ impl Training {
             keyboard::Event::CharacterReceived(c)
                 if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
             {
-                if let Some(line) = self.session.apply_char(c) {
-                    if let Some(words) = self.user.profile_mut().add_line(line) {
-                        self.session.update_words(words)
+                if let Some(line) = self.session_mut().apply_char(c) {
+                    if let Some(words) = self.users.profile_mut().add_line(line) {
+                        self.session_mut().update_words(words)
                     }
                 }
                 None
             }
             _ => None,
         }
+    }
+
+    fn session(&self) -> &Session {
+        &self.users.active().profiles.active().session
+    }
+
+    fn session_mut(&mut self) -> &mut Session {
+        &mut self.users.active_mut().profiles.active_mut().session
     }
 }

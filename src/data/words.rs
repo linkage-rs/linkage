@@ -2,7 +2,7 @@ use super::dictionary::Dictionary;
 use super::random::Random;
 use super::CharSet;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Setting {
     Dictionary,
     Random,
@@ -59,6 +59,15 @@ impl Words {
                 generator,
                 char_set,
             } => generator.line(char_set, length),
+        }
+    }
+}
+
+impl From<&Words> for Setting {
+    fn from(words: &Words) -> Setting {
+        match words {
+            Words::Dictionary { .. } => Setting::Dictionary,
+            Words::Random { .. } => Setting::Random,
         }
     }
 }

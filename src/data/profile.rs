@@ -1,50 +1,27 @@
 use super::keyboard::Keyboard;
 use super::training::{Line, Session, State};
 use super::words;
-
-#[derive(Debug, Clone)]
-pub struct User {
-    pub name: String,
-    pub profiles: Vec<Profile>,
-}
+use super::zipper_list::ZipperList;
 
 #[derive(Debug, Clone)]
 pub struct Profile {
-    pub name: String,
-    pub keyboard: Keyboard,
+    name: String,
+    keyboard: Keyboard,
     state: State,
     words: words::Setting,
 }
 
-impl User {
-    pub fn profile(&self) -> &Profile {
-        &self.profiles[0]
-    }
-
-    pub fn profile_mut(&mut self) -> &mut Profile {
-        &mut self.profiles[0]
-    }
+#[derive(Debug)]
+pub struct Active {
+    pub name: String,
+    pub keyboard: Keyboard,
+    pub state: State,
+    pub session: Session,
 }
 
-impl Default for User {
-    fn default() -> Self {
-        Self {
-            name: "Default User".to_string(),
-            profiles: vec![Profile::default()],
-        }
-    }
-}
-
-impl Profile {
-    pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
-        self.state
-            .add_line(line, &self.keyboard)
-            .map(|char_set| self.words.get_words(char_set))
-    }
-
-    pub fn start_session(&self) -> Session {
-        Session::new(&self.words, &self.state)
-    }
+#[derive(Debug)]
+pub struct List {
+    zipper: ZipperList<Profile, Active>,
 }
 
 impl Default for Profile {
@@ -58,6 +35,57 @@ impl Default for Profile {
             keyboard,
             state,
             words: words::Setting::default(),
+        }
+    }
+}
+
+impl Active {
+    pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
+        self.state
+            .add_line(line, &self.keyboard)
+            .map(|char_set| self.session.words_setting().get_words(char_set))
+    }
+}
+
+impl List {
+    pub fn active(&self) -> &Active {
+        self.zipper.current()
+    }
+
+    pub fn active_mut(&mut self) -> &mut Active {
+        self.zipper.current_mut()
+    }
+
+    pub fn parts(self) -> (Vec<Profile>, Profile, Vec<Profile>) {
+        self.zipper.into()
+    }
+
+    pub fn from_parts(parts: (Vec<Profile>, Profile, Vec<Profile>)) -> Self {
+        Self {
+            zipper: parts.into(),
+        }
+    }
+}
+
+impl From<Profile> for Active {
+    fn from(profile: Profile) -> Self {
+        let session = Session::new(&profile.words, &profile.state);
+        Self {
+            name: profile.name,
+            keyboard: profile.keyboard,
+            state: profile.state,
+            session,
+        }
+    }
+}
+
+impl From<Active> for Profile {
+    fn from(active: Active) -> Self {
+        Self {
+            name: active.name,
+            keyboard: active.keyboard,
+            state: active.state,
+            words: active.session.words_setting().clone(),
         }
     }
 }

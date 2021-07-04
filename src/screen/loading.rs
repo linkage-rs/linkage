@@ -1,4 +1,5 @@
-use crate::data::{Theme, User};
+use crate::data::user;
+use crate::data::Theme;
 
 use iced::{Element, Text};
 
@@ -7,15 +8,15 @@ pub struct Loading {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Loaded(Result<User, Error>),
+    Loaded(Result<user::Saved, Error>),
 }
 
 pub enum Event {
-    Load(User),
+    Load(user::List),
 }
 
 pub async fn load() -> Message {
-    Message::Loaded(Ok(User::default()))
+    Message::Loaded(Ok(user::Saved::default()))
 }
 
 impl Loading {
@@ -29,7 +30,9 @@ impl Loading {
 
     pub fn update(&mut self, message: Message) -> Option<Event> {
         match message {
-            Message::Loaded(result) => Some(Event::Load(result.unwrap_or(User::default()))),
+            Message::Loaded(result) => {
+                Some(Event::Load(result.unwrap_or(user::Saved::default()).into()))
+            }
         }
     }
 }

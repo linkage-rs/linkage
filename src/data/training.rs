@@ -218,6 +218,10 @@ impl Session {
     pub fn update_words(&mut self, words: Words) {
         self.words = words;
     }
+
+    pub fn words_setting(&self) -> words::Setting {
+        (&self.words).into()
+    }
 }
 
 impl Hit {

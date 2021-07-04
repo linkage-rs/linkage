@@ -72,8 +72,8 @@ impl Application for Linkage {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
                         }
-                        screen::Event::Training(user) => {
-                            self.screen = Screen::training(user);
+                        screen::Event::Training(users) => {
+                            self.screen = Screen::training(users);
                             Command::none()
                         }
                     }
