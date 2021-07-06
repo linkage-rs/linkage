@@ -1,81 +1,107 @@
 use crate::data::user;
 use crate::data::Theme;
-use iced::{Column, Command, Element, Subscription};
+use iced::{Command, Element, Subscription};
 
 pub mod loading;
+mod settings;
 pub mod training;
 
 #[derive(Debug)]
 pub enum Screen {
     /// Startup screen when loading data from disk
-    Loading(loading::Loading),
+    Loading(loading::State),
     /// Tying practice
-    Training(training::Training),
+    Training(training::State),
     /// Changing user settings
-    Settings,
-    /// Switching users
-    UserSwitch,
-    /// Shutting down
-    Saving,
+    Settings(settings::State),
+    // /// Shutting down
+    // Saving,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
     Loading(loading::Message),
+    Settings(settings::Message),
     Training(training::Message),
 }
 
 pub enum Event {
     ExitRequested,
-    Training(user::List),
 }
 
 impl Screen {
     pub fn new() -> Self {
-        Self::Loading(loading::Loading::new())
+        Self::Loading(loading::State::new())
     }
 
-    pub fn training(users: user::List) -> Self {
-        Self::Training(training::Training::new(users))
+    pub fn settings() -> Self {
+        Self::Settings(settings::State::new())
     }
 
-    pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
-        match (self, message) {
-            (Screen::Loading(loading), Message::Loading(message)) => {
-                match loading.update(message) {
+    pub fn training() -> Self {
+        Self::Training(training::State::new())
+    }
+
+    pub fn update(
+        &mut self,
+        users: &mut user::List,
+        message: Message,
+    ) -> Option<(Command<Message>, Event)> {
+        match self {
+            Screen::Loading(state) => match message {
+                Message::Loading(message) => match state.update(message) {
                     Some(event) => match event {
-                        loading::Event::Load(users) => {
-                            Some((Command::none(), Event::Training(users)))
+                        loading::Event::Load(loaded_users) => {
+                            *self = Screen::training();
+                            *users = loaded_users;
+                            None
                         }
                     },
-                    _ => None,
-                }
-            }
-            (Screen::Training(training), Message::Training(message)) => {
-                match training.update(message) {
+                    None => None,
+                },
+                _ => None,
+            },
+            Screen::Training(state) => match message {
+                Message::Training(message) => match state.update(users, message) {
                     Some((command, event)) => match event {
                         training::Event::ExitRequested => {
                             Some((command.map(Message::Training), Event::ExitRequested))
                         }
+                        training::Event::Settings => {
+                            *self = Screen::settings();
+                            None
+                        }
                     },
-                    _ => None,
-                }
-            }
-            _ => None,
+                    None => None,
+                },
+                _ => None,
+            },
+            Screen::Settings(state) => match message {
+                Message::Settings(message) => match state.update(users, message) {
+                    Some((_command, event)) => match event {
+                        settings::Event::Exit => {
+                            *self = Screen::training();
+                            None
+                        }
+                    },
+                    None => None,
+                },
+                _ => None,
+            },
         }
     }
 
-    pub fn view(&mut self, theme: &Theme) -> Element<Message> {
+    pub fn view(&mut self, users: &user::List, theme: &Theme) -> Element<Message> {
         match self {
             Screen::Loading(loading) => loading.view(theme).map(Message::Loading),
-            Screen::Training(training) => training.view(theme).map(Message::Training),
-            _ => Column::new().into(),
+            Screen::Settings(state) => state.view(theme).map(Message::Settings),
+            Screen::Training(state) => state.view(users, theme).map(Message::Training),
         }
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
         match self {
-            Screen::Training(training) => training.subscription().map(Message::Training),
+            Screen::Training { .. } => training::subscription().map(Message::Training),
             _ => Subscription::none(),
         }
     }

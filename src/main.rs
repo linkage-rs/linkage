@@ -10,6 +10,7 @@ mod font;
 mod screen;
 mod style;
 
+use data::user;
 use data::Theme;
 use screen::Screen;
 
@@ -32,6 +33,7 @@ struct Linkage {
     should_exit: bool,
     screen: Screen,
     theme: Theme,
+    users: user::List,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +52,7 @@ impl Application for Linkage {
             should_exit: false,
             screen: Screen::new(),
             theme: Theme::monokai(),
+            users: user::List::default(),
         };
         (
             linkage,
@@ -67,14 +70,11 @@ impl Application for Linkage {
         match message {
             Message::Event(event) => self.handle_event(event),
             Message::Screen(message) => {
-                if let Some((command, event)) = self.screen.update(message) {
+                let Linkage { screen, users, .. } = self;
+                if let Some((command, event)) = screen.update(users, message) {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
-                        }
-                        screen::Event::Training(users) => {
-                            self.screen = Screen::training(users);
-                            Command::none()
                         }
                     }
                 } else {
@@ -96,12 +96,17 @@ impl Application for Linkage {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let content = self.screen.view(&self.theme).map(Message::Screen);
+        let Linkage {
+            screen,
+            theme,
+            users,
+            ..
+        } = self;
+        let content = screen.view(users, theme).map(Message::Screen);
 
         Container::new(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(10)
             .center_x()
             .center_y()
             .style(style::container::primary(&self.theme))

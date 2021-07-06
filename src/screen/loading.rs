@@ -4,7 +4,7 @@ use crate::data::Theme;
 use iced::{Element, Text};
 
 #[derive(Debug)]
-pub struct Loading {}
+pub struct State {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -19,7 +19,7 @@ pub async fn load() -> Message {
     Message::Loaded(Ok(user::Saved::default()))
 }
 
-impl Loading {
+impl State {
     pub fn new() -> Self {
         Self {}
     }

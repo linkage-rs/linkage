@@ -1,4 +1,5 @@
 use super::profile::{self, Profile};
+use super::training::Session;
 use super::zipper_list::ZipperList;
 
 #[derive(Debug, Clone)]
@@ -49,8 +50,26 @@ impl List {
         self.zipper.current_mut()
     }
 
+    pub fn profile(&self) -> &profile::Active {
+        self.active().profiles.active()
+    }
+
     pub fn profile_mut(&mut self) -> &mut profile::Active {
         self.active_mut().profiles.active_mut()
+    }
+
+    pub fn session(&self) -> &Session {
+        &self.profile().session
+    }
+
+    pub fn session_mut(&mut self) -> &mut Session {
+        &mut self.profile_mut().session
+    }
+}
+
+impl Default for List {
+    fn default() -> Self {
+        Saved::default().into()
     }
 }
 

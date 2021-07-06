@@ -2,25 +2,32 @@ use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
 use crate::data::user;
 use crate::data::Theme;
 use crate::font;
+use crate::style;
+use iced::button::{self, Button};
 use iced::keyboard::{self, KeyCode};
-use iced::{Column, Command, Element, Length, Row, Space, Subscription, Text, VerticalAlignment};
+use iced::{
+    Align, Column, Command, Container, Element, Length, Row, Space, Subscription, Text,
+    VerticalAlignment,
+};
 use itertools::{EitherOrBoth, Itertools};
 
 #[derive(Debug)]
-pub struct Training {
-    users: user::List,
+pub struct State {
     modifiers: keyboard::Modifiers,
+    user_button: button::State,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
     KeyboardEvent(iced::keyboard::Event),
+    UserButtonPressed,
     WindowFocused,
     WindowUnocused,
 }
 
 pub enum Event {
     ExitRequested,
+    Settings,
 }
 
 const CHAR_WIDTH: u16 = 10;
@@ -29,24 +36,30 @@ const ROW_WIDTH: u16 = CHAR_WIDTH * ROW_CHARS;
 const ROW_ERROR_WIDTH: u16 = (MAX_ERRORS - 1) as u16 * CHAR_WIDTH;
 const LINE_SPACE: u16 = 10;
 
-impl Training {
-    pub fn new(users: user::List) -> Self {
+impl State {
+    pub fn new() -> Self {
         Self {
-            users,
             modifiers: keyboard::Modifiers::default(),
+            user_button: button::State::new(),
         }
     }
 
-    pub fn update(&mut self, message: Message) -> Option<(Command<Message>, Event)> {
+    pub fn update(
+        &mut self,
+        users: &mut user::List,
+        message: Message,
+    ) -> Option<(Command<Message>, Event)> {
         match message {
-            Message::KeyboardEvent(keyboard_event) => self.handle_keyboard(keyboard_event),
+            Message::KeyboardEvent(keyboard_event) => self.handle_keyboard(users, keyboard_event),
+            Message::UserButtonPressed => Some((Command::none(), Event::Settings)),
             _ => None,
         }
     }
 
-    pub fn view(&mut self, theme: &Theme) -> Element<Message> {
+    pub fn view(&mut self, users: &user::List, theme: &Theme) -> Element<Message> {
         let active_line = Row::with_children(
-            self.session()
+            users
+                .session()
                 .hits
                 .iter()
                 .map(|hit| {
@@ -60,12 +73,13 @@ impl Training {
                         })
                 })
                 .chain(
-                    self.session()
+                    users
+                        .session()
                         .errors
                         .iter()
                         .zip_longest(
-                            std::iter::once(&self.session().active_hit.target())
-                                .chain(self.session().targets.iter()),
+                            std::iter::once(&users.session().active_hit.target())
+                                .chain(users.session().targets.iter()),
                         )
                         .map(|result| match result {
                             EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
@@ -84,10 +98,12 @@ impl Training {
                 .collect(),
         );
 
-        let target_indicator: Element<_> = if self.session().errors.is_empty() {
+        let target_indicator: Element<_> = if users.session().errors.is_empty() {
             Row::with_children(vec![
-                Space::with_width(Length::Units(self.session().hits.len() as u16 * CHAR_WIDTH))
-                    .into(),
+                Space::with_width(Length::Units(
+                    users.session().hits.len() as u16 * CHAR_WIDTH,
+                ))
+                .into(),
                 Text::new("\u{2015}")
                     .width(Length::Units(CHAR_WIDTH))
                     .height(Length::Units(LINE_SPACE))
@@ -106,7 +122,8 @@ impl Training {
             .push(target_indicator);
 
         let content_next = Column::with_children(
-            self.session()
+            users
+                .session()
                 .next_lines
                 .iter()
                 .map(|line| {
@@ -126,30 +143,36 @@ impl Training {
         .spacing(LINE_SPACE)
         .width(Length::Units(ROW_WIDTH));
 
-        Column::with_children(vec![content_active.into(), content_next.into()])
-            .padding([0, 0, 0, ROW_ERROR_WIDTH])
-            .into()
-    }
+        let training = Column::with_children(vec![content_active.into(), content_next.into()])
+            .padding([0, 0, 0, ROW_ERROR_WIDTH]);
+        let training = Container::new(training)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x()
+            .center_y();
 
-    pub fn subscription(&self) -> Subscription<Message> {
-        use iced_native::event::{Event, Status};
-        use iced_native::window::Event as WindowEvent;
+        let user_button_content = Column::new()
+            .push(Text::new(users.active().name.clone()).size(14))
+            .push(Text::new(users.profile().name.clone()).size(14))
+            .width(Length::Fill)
+            .align_items(Align::End)
+            .spacing(5);
 
-        iced_native::subscription::events_with(|event, status| {
-            if status == Status::Captured {
-                return None;
-            }
-            match event {
-                Event::Keyboard(keyboard_event) => Some(Message::KeyboardEvent(keyboard_event)),
-                Event::Window(WindowEvent::Focused) => Some(Message::WindowFocused),
-                Event::Window(WindowEvent::Unfocused) => Some(Message::WindowUnocused),
-                _ => None,
-            }
-        })
+        let user_button = Button::new(&mut self.user_button, user_button_content)
+            .on_press(Message::UserButtonPressed)
+            .style(style::button::text(theme))
+            .padding(10);
+
+        let footer = Row::new()
+            .push(Space::with_width(Length::Fill))
+            .push(user_button);
+
+        Column::with_children(vec![training.into(), footer.into()]).into()
     }
 
     pub fn handle_keyboard(
         &mut self,
+        users: &mut user::List,
         event: iced::keyboard::Event,
     ) -> Option<(Command<Message>, Event)> {
         match event {
@@ -163,16 +186,16 @@ impl Training {
                 modifiers,
             } => match key_code {
                 KeyCode::Space => {
-                    if let Some(line) = self.session_mut().apply_char(' ') {
-                        if let Some(words) = self.users.profile_mut().add_line(line) {
-                            self.session_mut().update_words(words)
+                    if let Some(line) = users.session_mut().apply_char(' ') {
+                        if let Some(words) = users.profile_mut().add_line(line) {
+                            users.session_mut().update_words(words)
                         }
                     }
                     None
                 }
                 KeyCode::Escape => None,
                 KeyCode::Backspace => {
-                    self.session_mut().backspace();
+                    users.session_mut().backspace();
                     None
                 }
                 #[cfg(target_os = "macos")]
@@ -184,9 +207,9 @@ impl Training {
             keyboard::Event::CharacterReceived(c)
                 if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
             {
-                if let Some(line) = self.session_mut().apply_char(c) {
-                    if let Some(words) = self.users.profile_mut().add_line(line) {
-                        self.session_mut().update_words(words)
+                if let Some(line) = users.session_mut().apply_char(c) {
+                    if let Some(words) = users.profile_mut().add_line(line) {
+                        users.session_mut().update_words(words)
                     }
                 }
                 None
@@ -194,12 +217,21 @@ impl Training {
             _ => None,
         }
     }
+}
 
-    fn session(&self) -> &Session {
-        &self.users.active().profiles.active().session
-    }
+pub fn subscription() -> Subscription<Message> {
+    use iced_native::event::{Event, Status};
+    use iced_native::window::Event as WindowEvent;
 
-    fn session_mut(&mut self) -> &mut Session {
-        &mut self.users.active_mut().profiles.active_mut().session
-    }
+    iced_native::subscription::events_with(|event, status| {
+        if status == Status::Captured {
+            return None;
+        }
+        match event {
+            Event::Keyboard(keyboard_event) => Some(Message::KeyboardEvent(keyboard_event)),
+            Event::Window(WindowEvent::Focused) => Some(Message::WindowFocused),
+            Event::Window(WindowEvent::Unfocused) => Some(Message::WindowUnocused),
+            _ => None,
+        }
+    })
 }
