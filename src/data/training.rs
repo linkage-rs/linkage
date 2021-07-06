@@ -1,4 +1,4 @@
-use super::keyboard::Keyboard;
+use super::keyboard::Layout;
 use super::words::{self, Words};
 use super::CharSet;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -99,7 +99,7 @@ impl State {
     }
 
     /// Add a line of completed training. Optionally returns a new char set.
-    pub fn add_line(&mut self, line: Line, keyboard: &Keyboard) -> Option<CharSet> {
+    pub fn add_line(&mut self, line: Line, layout: &Layout) -> Option<CharSet> {
         for hit in line.hits {
             if let Some(timings) = self.timings.get_mut(&hit.target) {
                 timings.push_back(hit.dt);
@@ -122,7 +122,7 @@ impl State {
         let all_clean = self.clean.iter().all(|(_, &v)| v >= MIN_CLEAN_PCT);
 
         if all_clean {
-            if let Some(letter) = keyboard.next_char(&self.char_set) {
+            if let Some(letter) = layout.next_char(&self.char_set) {
                 self.char_set.insert(letter);
                 self.clean.insert(letter, 0.0);
                 self.events.push(Event::unlock(letter));

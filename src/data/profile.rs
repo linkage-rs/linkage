@@ -1,4 +1,4 @@
-use super::keyboard::Keyboard;
+use super::keyboard::Layout;
 use super::training::{Line, Session, State};
 use super::words;
 use super::zipper_list::ZipperList;
@@ -6,7 +6,7 @@ use super::zipper_list::ZipperList;
 #[derive(Debug, Clone)]
 pub struct Profile {
     name: String,
-    keyboard: Keyboard,
+    layout: Layout,
     state: State,
     words: words::Setting,
 }
@@ -14,7 +14,7 @@ pub struct Profile {
 #[derive(Debug)]
 pub struct Active {
     pub name: String,
-    pub keyboard: Keyboard,
+    pub layout: Layout,
     pub state: State,
     pub session: Session,
 }
@@ -26,13 +26,13 @@ pub struct List {
 
 impl Default for Profile {
     fn default() -> Self {
-        let keyboard = Keyboard::default();
-        let chars = keyboard.initial_chars();
+        let layout = Layout::default();
+        let chars = layout.initial_chars();
         let state = State::new(chars);
 
         Self {
             name: "Default Profile".to_string(),
-            keyboard,
+            layout,
             state,
             words: words::Setting::default(),
         }
@@ -42,7 +42,7 @@ impl Default for Profile {
 impl Active {
     pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
         self.state
-            .add_line(line, &self.keyboard)
+            .add_line(line, &self.layout)
             .map(|char_set| self.session.words_setting().get_words(char_set))
     }
 }
@@ -54,6 +54,14 @@ impl List {
 
     pub fn active_mut(&mut self) -> &mut Active {
         self.zipper.current_mut()
+    }
+
+    pub fn session(&self) -> &Session {
+        &self.active().session
+    }
+
+    pub fn session_mut(&mut self) -> &mut Session {
+        &mut self.active_mut().session
     }
 
     pub fn parts(self) -> (Vec<Profile>, Profile, Vec<Profile>) {
@@ -72,7 +80,7 @@ impl From<Profile> for Active {
         let session = Session::new(&profile.words, &profile.state);
         Self {
             name: profile.name,
-            keyboard: profile.keyboard,
+            layout: profile.layout,
             state: profile.state,
             session,
         }
@@ -83,7 +91,7 @@ impl From<Active> for Profile {
     fn from(active: Active) -> Self {
         Self {
             name: active.name,
-            keyboard: active.keyboard,
+            layout: active.layout,
             state: active.state,
             words: active.session.words_setting().clone(),
         }

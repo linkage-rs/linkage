@@ -1,12 +1,6 @@
 use super::CharSet;
 
 #[derive(Debug, Clone)]
-pub struct Keyboard {
-    pub name: String,
-    pub layout: Layout,
-}
-
-#[derive(Debug, Clone)]
 pub enum Layout {
     Colemak,
     ColemakDHm,
@@ -18,31 +12,6 @@ pub enum Layout {
     QwertyOrtholinear,
     Workman,
     WorkmanOrtholinear,
-}
-
-impl Default for Keyboard {
-    fn default() -> Self {
-        Self {
-            name: "Default Keyboard".to_string(),
-            layout: Layout::default(),
-        }
-    }
-}
-
-impl Keyboard {
-    pub fn initial_chars(&self) -> Vec<char> {
-        self.layout.letter_order()[0..6].to_vec()
-    }
-
-    /// Get the next character in the list, given the current character set
-    pub fn next_char(&self, char_set: &CharSet) -> Option<char> {
-        self.layout
-            .letter_order()
-            .iter()
-            .filter(|&letter| !char_set.contains(&letter))
-            .cloned()
-            .next()
-    }
 }
 
 impl Default for Layout {
@@ -84,6 +53,19 @@ pub const ALL: &[Layout] = &[
 ];
 
 impl Layout {
+    pub fn initial_chars(&self) -> Vec<char> {
+        self.letter_order()[0..6].to_vec()
+    }
+
+    /// Get the next character in the list, given the current character set
+    pub fn next_char(&self, char_set: &CharSet) -> Option<char> {
+        self.letter_order()
+            .iter()
+            .filter(|&letter| !char_set.contains(&letter))
+            .cloned()
+            .next()
+    }
+
     /// The order in which letters are unlocked for this layout
     pub fn letter_order(&self) -> Vec<char> {
         match self {
