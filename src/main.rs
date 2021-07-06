@@ -10,7 +10,7 @@ mod font;
 mod screen;
 mod style;
 
-use data::user;
+use data::profile;
 use data::Theme;
 use screen::Screen;
 
@@ -33,7 +33,7 @@ struct Linkage {
     should_exit: bool,
     screen: Screen,
     theme: Theme,
-    users: user::List,
+    profiles: profile::List,
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +52,7 @@ impl Application for Linkage {
             should_exit: false,
             screen: Screen::new(),
             theme: Theme::monokai(),
-            users: user::List::default(),
+            profiles: profile::List::default(),
         };
         (
             linkage,
@@ -70,8 +70,10 @@ impl Application for Linkage {
         match message {
             Message::Event(event) => self.handle_event(event),
             Message::Screen(message) => {
-                let Linkage { screen, users, .. } = self;
-                if let Some((command, event)) = screen.update(users, message) {
+                let Linkage {
+                    screen, profiles, ..
+                } = self;
+                if let Some((command, event)) = screen.update(profiles, message) {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
@@ -99,10 +101,10 @@ impl Application for Linkage {
         let Linkage {
             screen,
             theme,
-            users,
+            profiles,
             ..
         } = self;
-        let content = screen.view(users, theme).map(Message::Screen);
+        let content = screen.view(profiles, theme).map(Message::Screen);
 
         Container::new(content)
             .width(Length::Fill)

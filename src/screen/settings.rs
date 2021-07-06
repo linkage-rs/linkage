@@ -1,11 +1,11 @@
-use crate::data::user;
+use crate::data::profile;
 use crate::data::Theme;
 use crate::font;
 use crate::style;
 
 use iced::button::{self, Button};
 use iced::{
-    Align, Column, Command, Container, Element, Length, Row, Space, Subscription, Text,
+    Align, Column, Command, Container, Element, Length, Row, Rule, Space, Subscription, Text,
     VerticalAlignment,
 };
 
@@ -17,7 +17,6 @@ pub struct State {
 #[derive(Debug, Clone)]
 pub enum Message {
     BackButtonPressed,
-    EscapePressed,
 }
 
 pub enum Event {
@@ -33,7 +32,7 @@ impl State {
 
     pub fn update(
         &mut self,
-        users: &mut user::List,
+        profiles: &mut profile::List,
         message: Message,
     ) -> Option<(Command<Message>, Event)> {
         match message {

@@ -24,6 +24,13 @@ pub struct List {
     zipper: ZipperList<Profile, Active>,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Saved {
+    prev: Vec<Profile>,
+    current: Profile,
+    next: Vec<Profile>,
+}
+
 impl Default for Profile {
     fn default() -> Self {
         let layout = Layout::default();
@@ -75,6 +82,18 @@ impl List {
     }
 }
 
+impl Default for List {
+    fn default() -> Self {
+        Saved::default().into()
+    }
+}
+
+impl Saved {
+    fn parts(self) -> (Vec<Profile>, Profile, Vec<Profile>) {
+        (self.prev, self.current, self.next)
+    }
+}
+
 impl From<Profile> for Active {
     fn from(profile: Profile) -> Self {
         let session = Session::new(&profile.words, &profile.state);
@@ -94,6 +113,25 @@ impl From<Active> for Profile {
             layout: active.layout,
             state: active.state,
             words: active.session.words_setting().clone(),
+        }
+    }
+}
+
+impl From<Saved> for List {
+    fn from(saved: Saved) -> Self {
+        Self {
+            zipper: saved.parts().into(),
+        }
+    }
+}
+
+impl From<List> for Saved {
+    fn from(list: List) -> Self {
+        let (prev, current, next) = list.zipper.into();
+        Self {
+            prev,
+            current,
+            next,
         }
     }
 }

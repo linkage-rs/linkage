@@ -1,5 +1,5 @@
+use crate::data::profile;
 use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
-use crate::data::user;
 use crate::data::Theme;
 use crate::font;
 use crate::style;
@@ -14,7 +14,7 @@ use itertools::{EitherOrBoth, Itertools};
 #[derive(Debug)]
 pub struct State {
     modifiers: keyboard::Modifiers,
-    user_button: button::State,
+    settings_button: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -39,25 +39,27 @@ impl State {
     pub fn new() -> Self {
         Self {
             modifiers: keyboard::Modifiers::default(),
-            user_button: button::State::new(),
+            settings_button: button::State::new(),
         }
     }
 
     pub fn update(
         &mut self,
-        users: &mut user::List,
+        profiles: &mut profile::List,
         message: Message,
     ) -> Option<(Command<Message>, Event)> {
         match message {
-            Message::KeyboardEvent(keyboard_event) => self.handle_keyboard(users, keyboard_event),
+            Message::KeyboardEvent(keyboard_event) => {
+                self.handle_keyboard(profiles, keyboard_event)
+            }
             Message::UserButtonPressed => Some((Command::none(), Event::Settings)),
             _ => None,
         }
     }
 
-    pub fn view(&mut self, users: &user::List, theme: &Theme) -> Element<Message> {
+    pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {
         let active_line = Row::with_children(
-            users
+            profiles
                 .session()
                 .hits
                 .iter()
@@ -72,13 +74,13 @@ impl State {
                         })
                 })
                 .chain(
-                    users
+                    profiles
                         .session()
                         .errors
                         .iter()
                         .zip_longest(
-                            std::iter::once(&users.session().active_hit.target())
-                                .chain(users.session().targets.iter()),
+                            std::iter::once(&profiles.session().active_hit.target())
+                                .chain(profiles.session().targets.iter()),
                         )
                         .map(|result| match result {
                             EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
@@ -97,10 +99,10 @@ impl State {
                 .collect(),
         );
 
-        let target_indicator: Element<_> = if users.session().errors.is_empty() {
+        let target_indicator: Element<_> = if profiles.session().errors.is_empty() {
             Row::with_children(vec![
                 Space::with_width(Length::Units(
-                    users.session().hits.len() as u16 * CHAR_WIDTH,
+                    profiles.session().hits.len() as u16 * CHAR_WIDTH,
                 ))
                 .into(),
                 Text::new("\u{2015}")
@@ -121,7 +123,7 @@ impl State {
             .push(target_indicator);
 
         let content_next = Column::with_children(
-            users
+            profiles
                 .session()
                 .next_lines
                 .iter()
@@ -150,28 +152,28 @@ impl State {
             .center_x()
             .center_y();
 
-        let user_button_content = Column::new()
-            .push(Text::new(users.active().name.clone()).size(14))
-            .push(Text::new(users.profile().name.clone()).size(14))
+        let settings_button_content = Column::new()
+            .push(Text::new(profiles.active().name.clone()).size(14))
+            .push(Text::new(profiles.active().layout.to_string()).size(14))
             .width(Length::Fill)
             .align_items(Align::End)
             .spacing(5);
 
-        let user_button = Button::new(&mut self.user_button, user_button_content)
+        let settings_button = Button::new(&mut self.settings_button, settings_button_content)
             .on_press(Message::UserButtonPressed)
             .style(style::button::text(theme))
             .padding(10);
 
         let footer = Row::new()
             .push(Space::with_width(Length::Fill))
-            .push(user_button);
+            .push(settings_button);
 
         Column::with_children(vec![training.into(), footer.into()]).into()
     }
 
     pub fn handle_keyboard(
         &mut self,
-        users: &mut user::List,
+        profiles: &mut profile::List,
         event: iced::keyboard::Event,
     ) -> Option<(Command<Message>, Event)> {
         match event {
@@ -185,16 +187,16 @@ impl State {
                 modifiers,
             } => match key_code {
                 KeyCode::Space => {
-                    if let Some(line) = users.session_mut().apply_char(' ') {
-                        if let Some(words) = users.profile_mut().add_line(line) {
-                            users.session_mut().update_words(words)
+                    if let Some(line) = profiles.session_mut().apply_char(' ') {
+                        if let Some(words) = profiles.active_mut().add_line(line) {
+                            profiles.session_mut().update_words(words)
                         }
                     }
                     None
                 }
                 KeyCode::Escape => None,
                 KeyCode::Backspace => {
-                    users.session_mut().backspace();
+                    profiles.session_mut().backspace();
                     None
                 }
                 _ => None,
@@ -202,9 +204,9 @@ impl State {
             keyboard::Event::CharacterReceived(c)
                 if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
             {
-                if let Some(line) = users.session_mut().apply_char(c) {
-                    if let Some(words) = users.profile_mut().add_line(line) {
-                        users.session_mut().update_words(words)
+                if let Some(line) = profiles.session_mut().apply_char(c) {
+                    if let Some(words) = profiles.active_mut().add_line(line) {
+                        profiles.session_mut().update_words(words)
                     }
                 }
                 None

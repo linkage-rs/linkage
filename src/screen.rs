@@ -1,4 +1,4 @@
-use crate::data::user;
+use crate::data::profile;
 use crate::data::Theme;
 use iced::{Command, Element, Subscription};
 
@@ -53,16 +53,16 @@ impl Screen {
 
     pub fn update(
         &mut self,
-        users: &mut user::List,
+        profiles: &mut profile::List,
         message: Message,
     ) -> Option<(Command<Message>, Event)> {
         match self {
             Screen::Loading(state) => match message {
                 Message::Loading(message) => match state.update(message) {
                     Some(event) => match event {
-                        loading::Event::Load(loaded_users) => {
+                        loading::Event::Load(loaded) => {
                             *self = Screen::training();
-                            *users = loaded_users;
+                            *profiles = loaded;
                             None
                         }
                     },
@@ -71,7 +71,7 @@ impl Screen {
                 _ => None,
             },
             Screen::Training(state) => match message {
-                Message::Training(message) => match state.update(users, message) {
+                Message::Training(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         training::Event::Settings => {
                             *self = Screen::settings();
@@ -83,7 +83,7 @@ impl Screen {
                 _ => None,
             },
             Screen::Settings(state) => match message {
-                Message::Settings(message) => match state.update(users, message) {
+                Message::Settings(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         settings::Event::Exit => {
                             *self = Screen::training();
@@ -97,11 +97,11 @@ impl Screen {
         }
     }
 
-    pub fn view(&mut self, users: &user::List, theme: &Theme) -> Element<Message> {
+    pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {
         match self {
             Screen::Loading(loading) => loading.view(theme).map(Message::Loading),
             Screen::Settings(state) => state.view(theme).map(Message::Settings),
-            Screen::Training(state) => state.view(users, theme).map(Message::Training),
+            Screen::Training(state) => state.view(profiles, theme).map(Message::Training),
         }
     }
 
