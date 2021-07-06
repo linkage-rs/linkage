@@ -26,7 +26,6 @@ pub enum Message {
 }
 
 pub enum Event {
-    ExitRequested,
     Settings,
 }
 
@@ -197,10 +196,6 @@ impl State {
                 KeyCode::Backspace => {
                     users.session_mut().backspace();
                     None
-                }
-                #[cfg(target_os = "macos")]
-                KeyCode::Q if modifiers.is_command_pressed() => {
-                    Some((Command::none(), Event::ExitRequested))
                 }
                 _ => None,
             },

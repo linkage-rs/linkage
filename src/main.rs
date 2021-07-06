@@ -116,15 +116,43 @@ impl Application for Linkage {
 
 impl Linkage {
     fn handle_event(&mut self, event: iced_native::Event) -> Command<Message> {
+        use iced::keyboard::{self, KeyCode};
+        use iced_native::event::Event;
+
         match event {
-            iced_native::Event::Window(window::Event::CloseRequested) => self.prepare_close(),
-            _ => Command::none(),
+            Event::Window(window::Event::CloseRequested) => {
+                return self.prepare_close();
+            }
+            Event::Keyboard(keyboard_event) => match keyboard_event {
+                keyboard::Event::KeyPressed {
+                    key_code,
+                    modifiers,
+                } => match key_code {
+                    KeyCode::Escape => {
+                        return self.go_back();
+                    }
+                    #[cfg(target_os = "macos")]
+                    KeyCode::Q if modifiers.is_command_pressed() => {
+                        return self.prepare_close();
+                    }
+                    _ => {}
+                },
+                _ => {}
+            },
+            _ => {}
         }
+
+        Command::none()
     }
 
     fn prepare_close(&mut self) -> Command<Message> {
         println!("Preparing to close.");
         self.should_exit = true;
+        Command::none()
+    }
+
+    fn go_back(&mut self) -> Command<Message> {
+        self.screen.go_back();
         Command::none()
     }
 }

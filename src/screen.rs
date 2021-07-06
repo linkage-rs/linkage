@@ -42,6 +42,15 @@ impl Screen {
         Self::Training(training::State::new())
     }
 
+    pub fn go_back(&mut self) {
+        match self {
+            Screen::Settings(..) => {
+                *self = Screen::training();
+            }
+            _ => {}
+        }
+    }
+
     pub fn update(
         &mut self,
         users: &mut user::List,
@@ -63,10 +72,7 @@ impl Screen {
             },
             Screen::Training(state) => match message {
                 Message::Training(message) => match state.update(users, message) {
-                    Some((command, event)) => match event {
-                        training::Event::ExitRequested => {
-                            Some((command.map(Message::Training), Event::ExitRequested))
-                        }
+                    Some((_command, event)) => match event {
                         training::Event::Settings => {
                             *self = Screen::settings();
                             None
