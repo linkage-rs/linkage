@@ -70,16 +70,6 @@ impl List {
     pub fn session_mut(&mut self) -> &mut Session {
         &mut self.active_mut().session
     }
-
-    pub fn parts(self) -> (Vec<Profile>, Profile, Vec<Profile>) {
-        self.zipper.into()
-    }
-
-    pub fn from_parts(parts: (Vec<Profile>, Profile, Vec<Profile>)) -> Self {
-        Self {
-            zipper: parts.into(),
-        }
-    }
 }
 
 impl Default for List {

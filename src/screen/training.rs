@@ -152,6 +152,30 @@ impl State {
             .center_x()
             .center_y();
 
+        let clean_letters = Column::with_children(
+            profiles
+                .active()
+                .state
+                .clean_letters()
+                .iter()
+                .map(|(ch, val)| {
+                    Text::new(format!("{}: {:.02}", ch, val))
+                        .color(theme.hit)
+                        .font(font::LIGHT)
+                        .size(12)
+                        .into()
+                })
+                .collect(),
+        )
+        .spacing(2)
+        .padding(5);
+
+        let content = Row::new()
+            .push(clean_letters)
+            .push(training)
+            .width(Length::Fill)
+            .height(Length::Fill);
+
         let settings_button_content = Column::new()
             .push(Text::new(profiles.active().name.clone()).size(14))
             .push(Text::new(profiles.active().layout.to_string()).size(14))
@@ -168,7 +192,7 @@ impl State {
             .push(Space::with_width(Length::Fill))
             .push(settings_button);
 
-        Column::with_children(vec![training.into(), footer.into()]).into()
+        Column::with_children(vec![content.into(), footer.into()]).into()
     }
 
     pub fn handle_keyboard(

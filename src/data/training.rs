@@ -1,6 +1,7 @@
 use super::keyboard::Layout;
 use super::words::{self, Words};
 use super::CharSet;
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet, VecDeque};
 use time::{Duration, Instant, OffsetDateTime};
 
@@ -132,6 +133,15 @@ impl State {
         }
 
         None
+    }
+
+    pub fn clean_letters(&self) -> Vec<(char, f32)> {
+        use std::cmp::Ordering;
+        self.clean
+            .clone()
+            .into_iter()
+            .sorted_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal))
+            .collect()
     }
 }
 
