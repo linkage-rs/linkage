@@ -14,7 +14,7 @@ impl StyleSheet for Divider {
     fn style(&self) -> Style {
         Style {
             color: Color {
-                a: 0.25,
+                a: 0.05,
                 ..self.theme.hit
             },
             fill_mode: FillMode::Full,

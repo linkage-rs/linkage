@@ -1,11 +1,15 @@
 use super::keyboard::Layout;
 use super::training::{Line, Session, State};
 use super::words;
-use super::zipper_list::ZipperList;
+use super::zipper_list::{Item, ZipperList};
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Name(String);
 
 #[derive(Debug, Clone)]
 pub struct Profile {
-    name: String,
+    name: Name,
     layout: Layout,
     state: State,
     words: words::Setting,
@@ -13,7 +17,7 @@ pub struct Profile {
 
 #[derive(Debug)]
 pub struct Active {
-    pub name: String,
+    pub name: Name,
     pub layout: Layout,
     pub state: State,
     pub session: Session,
@@ -31,6 +35,15 @@ pub struct Saved {
     next: Vec<Profile>,
 }
 
+impl Profile {
+    pub fn new(list: &List) -> Self {
+        Self {
+            name: Name::new(list),
+            ..Self::default()
+        }
+    }
+}
+
 impl Default for Profile {
     fn default() -> Self {
         let layout = Layout::default();
@@ -38,7 +51,7 @@ impl Default for Profile {
         let state = State::new(chars);
 
         Self {
-            name: "Default Profile".to_string(),
+            name: Name::unchecked_from("Default Profile"),
             layout,
             state,
             words: words::Setting::default(),
@@ -69,6 +82,36 @@ impl List {
 
     pub fn session_mut(&mut self) -> &mut Session {
         &mut self.active_mut().session
+    }
+
+    pub fn len(&self) -> usize {
+        self.zipper.len()
+    }
+
+    fn iter(&self) -> impl Iterator<Item = Item<&Profile, &Active>> {
+        self.zipper.iter()
+    }
+
+    pub fn select(&mut self, index: usize) -> bool {
+        self.zipper.select(index)
+    }
+
+    pub fn insert_active(&mut self, profile: Profile) {
+        self.zipper.push(profile);
+        let len = self.zipper.len();
+        if self.zipper.select(len.saturating_sub(1)) {
+            self.sort();
+        }
+    }
+
+    pub fn sort(&mut self) {}
+
+    /// Iterator of (name, is_active)
+    pub fn names(&self) -> impl Iterator<Item = (Name, bool)> + '_ {
+        self.iter().map(|item| match item {
+            Item::Current(profile) => (profile.name.clone(), true),
+            Item::Other(profile) => (profile.name.clone(), false),
+        })
     }
 }
 
@@ -123,5 +166,51 @@ impl From<List> for Saved {
             current,
             next,
         }
+    }
+}
+
+impl Name {
+    const MAX_LENGTH: usize = 32;
+
+    pub fn parse(s: &str) -> Option<Name> {
+        if s.trim() == s && (1..Self::MAX_LENGTH).contains(&s.len()) {
+            return Some(Self(s.to_string()));
+        }
+
+        None
+    }
+
+    pub fn new(list: &List) -> Name {
+        let base: String = "New Profile".to_string();
+        let existing: HashSet<String> = list.names().map(|(n, _)| String::from(n)).collect();
+
+        if existing.contains(&base) {
+            let mut counter = 2;
+            loop {
+                let name = format!("{} ({})", base, counter);
+                if !existing.contains(&name) {
+                    return Name(name);
+                }
+                counter += 1;
+            }
+        } else {
+            Name(base)
+        }
+    }
+
+    fn unchecked_from(s: &str) -> Name {
+        Self(s.to_string())
+    }
+}
+
+impl From<Name> for String {
+    fn from(name: Name) -> String {
+        name.0
+    }
+}
+
+impl std::fmt::Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

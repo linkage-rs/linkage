@@ -206,10 +206,7 @@ impl State {
                 None
             }
 
-            keyboard::Event::KeyPressed {
-                key_code,
-                modifiers,
-            } => match key_code {
+            keyboard::Event::KeyPressed { key_code, .. } => match key_code {
                 KeyCode::Space => {
                     if let Some(line) = profiles.session_mut().apply_char(' ') {
                         if let Some(words) = profiles.active_mut().add_line(line) {

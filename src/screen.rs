@@ -100,7 +100,7 @@ impl Screen {
     pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {
         match self {
             Screen::Loading(loading) => loading.view(theme).map(Message::Loading),
-            Screen::Settings(state) => state.view(theme).map(Message::Settings),
+            Screen::Settings(state) => state.view(profiles, theme).map(Message::Settings),
             Screen::Training(state) => state.view(profiles, theme).map(Message::Training),
         }
     }

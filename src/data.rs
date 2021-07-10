@@ -7,7 +7,7 @@ pub mod random;
 pub mod theme;
 pub mod training;
 pub mod words;
-mod zipper_list;
+pub mod zipper_list;
 
 pub use theme::Theme;
 pub use words::Words;
