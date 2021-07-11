@@ -4,7 +4,7 @@ use super::words;
 use super::zipper_list::{Item, ZipperList};
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, PartialOrd)]
 pub struct Name(String);
 
 #[derive(Debug, Clone)]
@@ -99,12 +99,8 @@ impl List {
     pub fn insert_active(&mut self, profile: Profile) {
         self.zipper.push(profile);
         let len = self.zipper.len();
-        if self.zipper.select(len.saturating_sub(1)) {
-            self.sort();
-        }
+        self.zipper.select(len.saturating_sub(1));
     }
-
-    pub fn sort(&mut self) {}
 
     /// Iterator of (name, is_active)
     pub fn names(&self) -> impl Iterator<Item = (Name, bool)> + '_ {
@@ -112,6 +108,11 @@ impl List {
             Item::Current(profile) => (profile.name.clone(), true),
             Item::Other(profile) => (profile.name.clone(), false),
         })
+    }
+
+    pub fn contains_name(&self, name: &Name) -> bool {
+        let names: HashSet<Name> = self.names().map(|(n, _)| n).collect();
+        names.contains(name)
     }
 }
 
