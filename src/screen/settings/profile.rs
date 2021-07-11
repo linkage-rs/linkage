@@ -112,24 +112,31 @@ impl State {
                     if is_active {
                         Container::new(text)
                             .style(style::container::menu_selected(theme))
+                            .width(Length::Fill)
                             .into()
                     } else {
                         Button::new(state, text)
                             .style(style::button::menu(theme, is_active))
                             .on_press(Message::ProfilePressed(i))
+                            .width(Length::Fill)
                             .padding(0)
                             .into()
                     }
                 })
                 .collect(),
-        );
+        )
+        .width(Length::Fill);
+
         let new_button = Button::new(new_button, Text::new("+ New Profile").size(14))
             .style(style::button::menu(theme, false))
-            .on_press(Message::NewProfilePressed);
+            .on_press(Message::NewProfilePressed)
+            .width(Length::Fill);
+
         let menu = Scrollable::new(menu_scroll)
             .push(menu)
             .push(new_button)
-            .height(Length::Fill);
+            .height(Length::Fill)
+            .width(Length::Units(175));
 
         let mut content = Scrollable::new(content_scroll).height(Length::Fill);
 

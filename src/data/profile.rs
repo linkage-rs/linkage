@@ -171,10 +171,10 @@ impl From<List> for Saved {
 }
 
 impl Name {
-    const MAX_LENGTH: usize = 32;
+    const MAX_LENGTH: usize = 24;
 
     pub fn parse(s: &str) -> Option<Name> {
-        if s.trim() == s && (1..Self::MAX_LENGTH).contains(&s.len()) {
+        if s.trim() == s && (1..=Self::MAX_LENGTH).contains(&s.len()) {
             return Some(Self(s.to_string()));
         }
 
