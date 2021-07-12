@@ -143,6 +143,7 @@ impl State {
         if *renaming {
             let name_input =
                 TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
+                    .style(style::text_input::themed(theme))
                     .width(Length::Fill);
             let mut rename_accept = Button::new(rename_accept, Text::new("\u{2714}"));
             if name_parsed.is_some() {
