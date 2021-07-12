@@ -138,29 +138,40 @@ impl State {
             .height(Length::Fill)
             .width(Length::Units(175));
 
-        let mut content = Scrollable::new(content_scroll).height(Length::Fill);
+        let mut content = Scrollable::new(content_scroll)
+            .height(Length::Fill)
+            .padding(10);
 
         if *renaming {
-            let name_input =
+            let mut name_input =
                 TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
                     .style(style::text_input::themed(theme))
-                    .width(Length::Fill);
-            let mut rename_accept = Button::new(rename_accept, Text::new("\u{2714}"));
+                    .width(Length::Fill)
+                    .padding(6)
+                    .size(18);
+            let mut rename_accept = Button::new(rename_accept, centered_text("\u{2714}", 20, 20))
+                .style(style::button::accept(theme));
             if name_parsed.is_some() {
+                name_input = name_input.on_submit(Message::RenameAccept);
                 rename_accept = rename_accept.on_press(Message::RenameAccept);
             }
-            let rename_cancel =
-                Button::new(rename_cancel, Text::new("\u{2716}")).on_press(Message::RenameCancel);
+            let rename_cancel = Button::new(rename_cancel, centered_text("\u{2716}", 20, 20))
+                .style(style::button::reject(theme))
+                .on_press(Message::RenameCancel);
             let name_row = Row::new()
                 .push(name_input)
                 .push(rename_accept)
-                .push(rename_cancel);
+                .push(rename_cancel)
+                .spacing(5);
             content = content.push(name_row);
         } else {
-            let rename_button =
-                Button::new(rename_button, Text::new(profiles.active().name.to_string()))
-                    .style(style::button::text(theme))
-                    .on_press(Message::RenamePressed);
+            let rename_button = Button::new(
+                rename_button,
+                Text::new(profiles.active().name.to_string()).size(18),
+            )
+            .style(style::button::text(theme))
+            .on_press(Message::RenamePressed)
+            .padding(6);
             content = content.push(rename_button)
         }
 
@@ -172,4 +183,12 @@ impl State {
             .width(Length::Fill)
             .into()
     }
+}
+
+fn centered_text(s: &str, size: u16, side: u16) -> Container<Message> {
+    Container::new(Text::new(s).size(size))
+        .width(Length::Units(side))
+        .height(Length::Units(side))
+        .center_x()
+        .center_y()
 }

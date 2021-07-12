@@ -13,6 +13,14 @@ pub fn menu(theme: &Theme, selected: bool) -> Menu {
     }
 }
 
+pub fn accept(theme: &Theme) -> Accept {
+    Accept { theme: *theme }
+}
+
+pub fn reject(theme: &Theme) -> Reject {
+    Reject { theme: *theme }
+}
+
 pub struct Text {
     theme: Theme,
 }
@@ -107,6 +115,152 @@ impl StyleSheet for Menu {
             text_color: Color {
                 a: 0.25,
                 ..self.theme.text
+            },
+            ..Style::default()
+        }
+    }
+}
+
+pub struct Accept {
+    theme: Theme,
+}
+
+impl StyleSheet for Accept {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.05,
+                    ..self.theme.target
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.15,
+                ..self.theme.target
+            },
+            text_color: Color {
+                a: 0.75,
+                ..self.theme.target
+            },
+            ..Style::default()
+        }
+    }
+
+    fn hovered(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.1,
+                    ..self.theme.target
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.5,
+                ..self.theme.target
+            },
+            text_color: self.theme.target,
+            ..Style::default()
+        }
+    }
+
+    fn pressed(&self) -> Style {
+        self.hovered()
+    }
+
+    fn disabled(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.025,
+                    ..self.theme.target
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.05,
+                ..self.theme.target
+            },
+            text_color: Color {
+                a: 0.05,
+                ..self.theme.target
+            },
+            ..Style::default()
+        }
+    }
+}
+
+pub struct Reject {
+    theme: Theme,
+}
+
+impl StyleSheet for Reject {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.05,
+                    ..self.theme.error
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.15,
+                ..self.theme.error
+            },
+            text_color: Color {
+                a: 0.75,
+                ..self.theme.error
+            },
+            ..Style::default()
+        }
+    }
+
+    fn hovered(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.1,
+                    ..self.theme.error
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.5,
+                ..self.theme.error
+            },
+            text_color: self.theme.error,
+            ..Style::default()
+        }
+    }
+
+    fn pressed(&self) -> Style {
+        self.hovered()
+    }
+
+    fn disabled(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.025,
+                    ..self.theme.error
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.05,
+                ..self.theme.error
+            },
+            text_color: Color {
+                a: 0.05,
+                ..self.theme.error
             },
             ..Style::default()
         }

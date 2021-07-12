@@ -23,25 +23,41 @@ impl StyleSheet for Themed {
             background: Color::TRANSPARENT.into(),
             border_radius: 0.0,
             border_width: 1.0,
-            border_color: Color {a:0.1, ..self.theme.hit},
+            border_color: Color {
+                a: 0.1,
+                ..self.theme.hit
+            },
         }
     }
 
     fn focused(&self) -> Style {
         Style {
-            background: Color { a:0.025, ..self.theme.hit}.into(),
+            background: Color {
+                a: 0.025,
+                ..self.theme.hit
+            }
+            .into(),
             border_radius: 0.0,
             border_width: 1.0,
-            border_color: Color {a:0.25, ..self.theme.hit},
+            border_color: Color {
+                a: 0.25,
+                ..self.theme.hit
+            },
         }
     }
 
     fn placeholder_color(&self) -> Color {
-        Color {a:0.25, ..self.theme.hit }
+        Color {
+            a: 0.25,
+            ..self.theme.hit
+        }
     }
 
     fn selection_color(&self) -> Color {
-        Color { a: 0.05, ..self.theme.text}
+        Color {
+            a: 0.05,
+            ..self.theme.text
+        }
     }
 
     fn value_color(&self) -> Color {
