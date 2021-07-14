@@ -1,10 +1,10 @@
 use super::CharSet;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Layout {
     Colemak,
-    ColemakDHm,
-    ColemakDHmOrtholinear,
+    ColemakDH,
+    ColemakDHOrtholinear,
     ColemakOrtholinear,
     Dvorak,
     DvorakOrtholinear,
@@ -24,8 +24,8 @@ impl std::fmt::Display for Layout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             Layout::Colemak => "Colemak Staggered",
-            Layout::ColemakDHm => "Colemak-DHm Staggered",
-            Layout::ColemakDHmOrtholinear => "Colemak-DHm Ortholinear",
+            Layout::ColemakDH => "Colemak-DH Staggered",
+            Layout::ColemakDHOrtholinear => "Colemak-DH Ortholinear",
             Layout::ColemakOrtholinear => "Colemak Ortholinear",
             Layout::Dvorak => "Dvorak Staggered",
             Layout::DvorakOrtholinear => "Dvorak Ortholinear",
@@ -43,12 +43,12 @@ pub const ALL: &[Layout] = &[
     Layout::Qwerty,
     Layout::Dvorak,
     Layout::Colemak,
-    Layout::ColemakDHm,
+    Layout::ColemakDH,
     Layout::Workman,
     Layout::QwertyOrtholinear,
     Layout::DvorakOrtholinear,
     Layout::ColemakOrtholinear,
-    Layout::ColemakDHmOrtholinear,
+    Layout::ColemakDHOrtholinear,
     Layout::WorkmanOrtholinear,
 ];
 
@@ -73,11 +73,11 @@ impl Layout {
                 'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
                 'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
             ],
-            Layout::ColemakDHm => vec![
+            Layout::ColemakDH => vec![
                 'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
                 'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
             ],
-            Layout::ColemakDHmOrtholinear => vec![
+            Layout::ColemakDHOrtholinear => vec![
                 'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
                 'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
             ],
