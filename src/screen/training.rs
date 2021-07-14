@@ -1,5 +1,5 @@
 use crate::data::profile;
-use crate::data::training::{Session, CHARS_PER_LINE, MAX_ERRORS};
+use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS};
 use crate::data::Theme;
 use crate::font;
 use crate::style;
@@ -15,6 +15,7 @@ use itertools::{EitherOrBoth, Itertools};
 pub struct State {
     modifiers: keyboard::Modifiers,
     settings_button: button::State,
+    accuracy_metric: TriplePoint,
 }
 
 #[derive(Debug, Clone)]
@@ -40,6 +41,7 @@ impl State {
         Self {
             modifiers: keyboard::Modifiers::default(),
             settings_button: button::State::new(),
+            accuracy_metric: TriplePoint::new(0.65, 0.9, 0.98).unwrap_or_default(),
         }
     }
 
@@ -160,7 +162,7 @@ impl State {
                 .iter()
                 .map(|(ch, val)| {
                     Text::new(format!("{}: {:.02}", ch, val))
-                        .color(theme.hit)
+                        .color(theme.metric(self.accuracy_metric.value(*val)))
                         .font(font::LIGHT)
                         .size(12)
                         .into()

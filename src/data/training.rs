@@ -269,3 +269,30 @@ impl Hit {
         !self.misses.is_empty()
     }
 }
+
+#[derive(Debug, Default)]
+pub struct TriplePoint {
+    lower: f32,
+    mid: f32,
+    upper: f32,
+}
+
+impl TriplePoint {
+    pub fn new(lower: f32, mid: f32, upper: f32) -> Option<Self> {
+        (lower < mid && mid < upper).then(|| Self { lower, mid, upper })
+    }
+
+    /// Map values on two linear scales between [lower, mid] and [mid, upper]
+    /// Values outside lower and upper are clamped to 0.0 and 1.0
+    pub fn value(&self, val: f32) -> f32 {
+        if val <= self.lower {
+            0.0
+        } else if val <= self.mid {
+            0.5 * (val - self.lower) / (self.mid - self.lower)
+        } else if val <= self.upper {
+            0.5 + 0.5 * (val - self.mid) / (self.upper - self.mid)
+        } else {
+            1.0
+        }
+    }
+}
