@@ -36,10 +36,15 @@ pub struct Saved {
 }
 
 impl Profile {
-    pub fn new(list: &List) -> Self {
+    pub fn new(name: Name, layout: Layout) -> Self {
+        let chars = layout.initial_chars();
+        let state = State::new(chars);
+
         Self {
-            name: Name::new(list),
-            ..Self::default()
+            name,
+            layout,
+            state,
+            words: words::Setting::default(),
         }
     }
 }

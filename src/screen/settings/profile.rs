@@ -1,27 +1,56 @@
+use crate::data::keyboard::{self, Layout};
 use crate::data::{self, Theme};
+use crate::font;
 use crate::style;
 use iced::button::{self, Button};
+use iced::pick_list::{self, PickList};
 use iced::scrollable::{self, Scrollable};
 use iced::text_input::{self, TextInput};
 use iced::{Column, Container, Element, Length, Row, Rule, Text};
 
 #[derive(Debug)]
 pub struct State {
+    menu: Menu,
     content_scroll: scrollable::State,
-    menu_scroll: scrollable::State,
-    name_input: text_input::State,
-    name_parsed: Option<data::profile::Name>,
-    name_value: String,
+    screen: Screen,
+}
+
+#[derive(Debug)]
+pub struct Menu {
+    buttons: Vec<button::State>,
     new_button: button::State,
-    profile_buttons: Vec<button::State>,
-    rename_accept: button::State,
-    rename_button: button::State,
-    rename_cancel: button::State,
-    renaming: bool,
+    scroll: scrollable::State,
+}
+
+#[derive(Debug)]
+pub enum Screen {
+    Create {
+        accept: button::State,
+        cancel: button::State,
+        layout: Option<Layout>,
+        layout_pick_list: pick_list::State<Layout>,
+        name_input: text_input::State,
+        name_parsed: Option<data::profile::Name>,
+        name_value: String,
+    },
+    Rename {
+        accept: button::State,
+        cancel: button::State,
+        name_input: text_input::State,
+        name_parsed: Option<data::profile::Name>,
+        name_value: String,
+    },
+    View {
+        rename_button: button::State,
+        // delete_button
+    },
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    CreateAccept,
+    CreateCancel,
+    LayoutChanged(Layout),
     NameInput(String),
     NewProfilePressed,
     ProfilePressed(usize),
@@ -33,76 +62,134 @@ pub enum Message {
 impl State {
     pub fn new() -> Self {
         Self {
+            menu: Menu::new(),
             content_scroll: scrollable::State::new(),
-            menu_scroll: scrollable::State::new(),
-            name_input: text_input::State::new(),
-            name_parsed: None,
-            name_value: String::new(),
-            new_button: button::State::new(),
-            profile_buttons: Vec::new(),
-            rename_accept: button::State::new(),
-            rename_button: button::State::new(),
-            rename_cancel: button::State::new(),
-            renaming: false,
+            screen: Screen::viewing(),
         }
     }
 
-    pub fn update(&mut self, profiles: &mut data::profile::List, message: Message) {
+    pub fn update(&mut self, profiles: &mut data::profile::List, message: Message) -> bool {
         match message {
-            Message::NameInput(new_name) => {
-                self.name_parsed = None;
-                if let Some(name) = data::profile::Name::parse(&new_name) {
-                    if !profiles.contains_name(&name) {
-                        self.name_parsed = Some(name);
-                    }
+            Message::CreateAccept => {
+                if let Screen::Create {
+                    layout: Some(layout),
+                    name_parsed: Some(name_parsed),
+                    ..
+                } = &self.screen
+                {
+                    let profile = data::profile::Profile::new(name_parsed.clone(), *layout);
+                    profiles.insert_active(profile);
+
+                    self.screen = Screen::viewing();
+
+                    return true;
                 }
-                self.name_value = new_name;
             }
+            Message::CreateCancel => {
+                self.screen = Screen::viewing();
+            }
+            Message::LayoutChanged(new_layout) => {
+                if let Screen::Create { ref mut layout, .. } = &mut self.screen {
+                    *layout = Some(new_layout);
+                }
+            }
+            Message::NameInput(new_name) => match &mut self.screen {
+                Screen::Create {
+                    ref mut name_parsed,
+                    ref mut name_value,
+                    ..
+                }
+                | Screen::Rename {
+                    ref mut name_parsed,
+                    ref mut name_value,
+                    ..
+                } => {
+                    *name_parsed = None;
+                    if let Some(name) = data::profile::Name::parse(&new_name) {
+                        if !profiles.contains_name(&name) {
+                            *name_parsed = Some(name);
+                        }
+                    }
+                    *name_value = new_name;
+                }
+                _ => {}
+            },
             Message::NewProfilePressed => {
-                let profile = data::profile::Profile::new(profiles);
-                profiles.insert_active(profile);
+                self.screen = Screen::creating();
             }
             Message::ProfilePressed(index) => {
                 profiles.select(index);
+                self.screen = Screen::viewing();
             }
             Message::RenameAccept => {
-                if let Some(name) = &self.name_parsed {
-                    profiles.active_mut().name = name.clone();
+                if let Screen::Rename {
+                    name_parsed: Some(name_parsed),
+                    ..
+                } = &self.screen
+                {
+                    profiles.active_mut().name = name_parsed.clone();
+                    self.screen = Screen::viewing();
+
+                    return true;
                 }
-                self.renaming = false;
             }
             Message::RenameCancel => {
-                self.renaming = false;
+                self.screen = Screen::viewing();
             }
             Message::RenamePressed => {
-                self.name_parsed = None;
-                self.name_value = profiles.active().name.to_string();
-                self.renaming = true;
+                self.screen = Screen::renaming(profiles.active().name.to_string());
             }
         }
+        false
     }
 
     pub fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
         let State {
+            menu,
             content_scroll,
-            menu_scroll,
-            name_input,
-            name_parsed,
-            name_value,
-            new_button,
-            profile_buttons,
-            rename_accept,
-            rename_button,
-            rename_cancel,
-            renaming,
+            screen,
         } = self;
 
-        profile_buttons.resize(profiles.len(), button::State::new());
+        let menu = menu.view(profiles, theme);
+
+        let content = Scrollable::new(content_scroll)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(10)
+            .push(screen.view(profiles, theme));
+
+        Row::new()
+            .push(menu)
+            .push(Rule::vertical(0).style(style::rule::divider(theme)))
+            .push(content)
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .into()
+    }
+}
+
+impl Menu {
+    fn new() -> Self {
+        Self {
+            buttons: Vec::new(),
+            new_button: button::State::new(),
+            scroll: scrollable::State::new(),
+        }
+    }
+
+    fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
+        let Menu {
+            buttons,
+            new_button,
+            scroll,
+        } = self;
+
+        buttons.resize(profiles.len(), button::State::new());
 
         let menu = Column::with_children(
             profiles
                 .names()
-                .zip(profile_buttons.iter_mut())
+                .zip(buttons.iter_mut())
                 .enumerate()
                 .map(|(i, ((name, is_active), state))| {
                     let text = Container::new(Text::new(name).size(14))
@@ -132,56 +219,149 @@ impl State {
             .on_press(Message::NewProfilePressed)
             .width(Length::Fill);
 
-        let menu = Scrollable::new(menu_scroll)
+        Scrollable::new(scroll)
             .push(menu)
             .push(new_button)
             .height(Length::Fill)
-            .width(Length::Units(175));
+            .width(Length::Units(175))
+            .into()
+    }
+}
 
-        let mut content = Scrollable::new(content_scroll)
-            .height(Length::Fill)
-            .padding(10);
+impl Screen {
+    fn creating() -> Self {
+        Self::Create {
+            accept: button::State::new(),
+            cancel: button::State::new(),
+            layout: None,
+            layout_pick_list: pick_list::State::default(),
+            name_input: text_input::State::new(),
+            name_parsed: None,
+            name_value: String::new(),
+        }
+    }
 
-        if *renaming {
-            let mut name_input =
-                TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
-                    .style(style::text_input::themed(theme))
-                    .width(Length::Fill)
-                    .padding(6)
-                    .size(18);
-            let mut rename_accept = Button::new(rename_accept, centered_text("\u{2714}", 20, 20))
-                .style(style::button::accept(theme));
-            if name_parsed.is_some() {
-                name_input = name_input.on_submit(Message::RenameAccept);
-                rename_accept = rename_accept.on_press(Message::RenameAccept);
+    fn renaming(name_value: String) -> Self {
+        Self::Rename {
+            accept: button::State::new(),
+            cancel: button::State::new(),
+            name_input: text_input::State::new(),
+            name_parsed: None,
+            name_value,
+        }
+    }
+
+    fn viewing() -> Self {
+        Self::View {
+            rename_button: button::State::new(),
+        }
+    }
+
+    fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
+        let mut content = Column::new().width(Length::Fill).spacing(20);
+
+        match self {
+            Screen::Create {
+                accept,
+                cancel,
+                layout,
+                layout_pick_list,
+                name_input,
+                name_parsed,
+                name_value,
+            } => {
+                let name_input =
+                    TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
+                        .style(style::text_input::themed(theme))
+                        .width(Length::Fill)
+                        .padding(6)
+                        .size(18);
+
+                let layout_title = Text::new("Keyboard Layout").size(14).font(font::THIN);
+                let layout_pick_list = PickList::new(
+                    layout_pick_list,
+                    keyboard::ALL,
+                    *layout,
+                    Message::LayoutChanged,
+                );
+                let layout_section = Column::new()
+                    .spacing(5)
+                    .push(layout_title)
+                    .push(layout_pick_list);
+
+                let mut accept = Button::new(accept, centered_text("\u{2714}", 20, 20))
+                    .style(style::button::accept(theme));
+                if name_parsed.is_some() && layout.is_some() {
+                    accept = accept.on_press(Message::CreateAccept);
+                }
+
+                let cancel = Button::new(cancel, centered_text("\u{2716}", 20, 20))
+                    .style(style::button::reject(theme))
+                    .on_press(Message::CreateCancel);
+
+                let button_row = Row::new().push(accept).push(cancel).spacing(5);
+
+                content = content
+                    .push(name_input)
+                    .push(layout_section)
+                    .push(button_row);
             }
-            let rename_cancel = Button::new(rename_cancel, centered_text("\u{2716}", 20, 20))
-                .style(style::button::reject(theme))
-                .on_press(Message::RenameCancel);
-            let name_row = Row::new()
-                .push(name_input)
-                .push(rename_accept)
-                .push(rename_cancel)
-                .spacing(5);
-            content = content.push(name_row);
-        } else {
-            let rename_button = Button::new(
-                rename_button,
-                Text::new(profiles.active().name.to_string()).size(18),
-            )
-            .style(style::button::text(theme))
-            .on_press(Message::RenamePressed)
-            .padding(6);
-            content = content.push(rename_button)
+            Screen::Rename {
+                accept,
+                cancel,
+                name_input,
+                name_parsed,
+                name_value,
+            } => {
+                let mut name_input =
+                    TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
+                        .style(style::text_input::themed(theme))
+                        .width(Length::Fill)
+                        .padding(6)
+                        .size(18);
+
+                let mut accept = Button::new(accept, centered_text("\u{2714}", 20, 20))
+                    .style(style::button::accept(theme));
+
+                if name_parsed.is_some() {
+                    name_input = name_input.on_submit(Message::RenameAccept);
+                    accept = accept.on_press(Message::RenameAccept);
+                }
+
+                let cancel = Button::new(cancel, centered_text("\u{2716}", 20, 20))
+                    .style(style::button::reject(theme))
+                    .on_press(Message::RenameCancel);
+
+                let name_row = Row::new()
+                    .push(name_input)
+                    .push(accept)
+                    .push(cancel)
+                    .spacing(5);
+
+                content = content.push(name_row);
+            }
+            Screen::View { rename_button } => {
+                let rename_button = Button::new(
+                    rename_button,
+                    Text::new(profiles.active().name.to_string()).size(18),
+                )
+                .style(style::button::text(theme))
+                .on_press(Message::RenamePressed)
+                .padding(6);
+
+                let layout_title = Text::new("Keyboard Layout").size(14).font(font::THIN);
+                let layout_name = Text::new(profiles.active().layout.to_string()).size(16);
+                let layout_section = Column::new()
+                    .padding([0, 0, 0, 6])
+                    .spacing(5)
+                    .push(layout_title)
+                    .push(layout_name);
+
+                content = content.push(rename_button).push(layout_section);
+            }
         }
 
-        Row::new()
-            .push(menu)
-            .push(Rule::vertical(0).style(style::rule::divider(theme)))
-            .push(content)
-            .height(Length::Fill)
-            .width(Length::Fill)
-            .into()
+        content.into()
     }
 }
 
