@@ -3,22 +3,34 @@ use iced::button::{Style, StyleSheet};
 use iced::Color;
 
 pub fn text(theme: &Theme) -> Text {
-    Text { theme: *theme }
+    Text {
+        theme: theme.clone(),
+    }
+}
+
+pub fn basic(theme: &Theme) -> Basic {
+    Basic {
+        theme: theme.clone(),
+    }
 }
 
 pub fn menu(theme: &Theme, selected: bool) -> Menu {
     Menu {
-        theme: *theme,
+        theme: theme.clone(),
         selected,
     }
 }
 
 pub fn accept(theme: &Theme) -> Accept {
-    Accept { theme: *theme }
+    Accept {
+        theme: theme.clone(),
+    }
 }
 
 pub fn reject(theme: &Theme) -> Reject {
-    Reject { theme: *theme }
+    Reject {
+        theme: theme.clone(),
+    }
 }
 
 pub struct Text {
@@ -51,6 +63,67 @@ impl StyleSheet for Text {
         Style {
             text_color: Color {
                 a: 0.25,
+                ..self.theme.text
+            },
+            ..Style::default()
+        }
+    }
+}
+
+pub struct Basic {
+    theme: Theme,
+}
+
+impl StyleSheet for Basic {
+    fn active(&self) -> Style {
+        Style {
+            background: None,
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.15,
+                ..self.theme.text
+            },
+            text_color: Color {
+                a: 0.75,
+                ..self.theme.text
+            },
+            ..Style::default()
+        }
+    }
+
+    fn hovered(&self) -> Style {
+        Style {
+            background: Some(
+                Color {
+                    a: 0.025,
+                    ..self.theme.text
+                }
+                .into(),
+            ),
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.5,
+                ..self.theme.text
+            },
+            text_color: self.theme.text,
+            ..Style::default()
+        }
+    }
+
+    fn pressed(&self) -> Style {
+        self.hovered()
+    }
+
+    fn disabled(&self) -> Style {
+        Style {
+            background: None,
+            border_width: 1.0,
+            border_color: Color {
+                a: 0.05,
+                ..self.theme.text
+            },
+            text_color: Color {
+                a: 0.05,
                 ..self.theme.text
             },
             ..Style::default()

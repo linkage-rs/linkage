@@ -1,5 +1,4 @@
 use crate::data::{self, Theme};
-use crate::font;
 use crate::style;
 
 use iced::button::{self, Button};
@@ -7,6 +6,7 @@ use iced::scrollable::{self, Scrollable};
 use iced::{Column, Command, Container, Element, Length, Row, Rule, Text};
 
 mod profile;
+mod theme;
 
 #[derive(Debug)]
 pub struct State {
@@ -19,25 +19,27 @@ pub struct State {
 #[derive(Debug)]
 pub enum Screen {
     Profile(profile::State),
-    Theme,
+    Theme(theme::State),
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
     BackButtonPressed,
-    ProfilesPressed,
-    ThemesPressed,
     Profile(profile::Message),
+    ProfilesPressed,
+    Theme(theme::Message),
+    ThemesPressed,
 }
 
 pub enum Event {
     Exit,
+    SelectTheme(Theme),
 }
 
 impl State {
     pub fn new() -> Self {
         Self {
-            screen: Screen::Profile(profile::State::new()),
+            screen: Screen::profile(),
             back_button: button::State::new(),
             menu_buttons: Vec::new(),
             menu_scroll: scrollable::State::new(),
@@ -59,7 +61,23 @@ impl State {
                     state.update(profiles, message);
                 }
             }
-            _ => {}
+            Message::ProfilesPressed => {
+                *screen = Screen::profile();
+            }
+            Message::Theme(message) => {
+                if let Screen::Theme(state) = screen {
+                    if let Some(event) = state.update(message) {
+                        match event {
+                            theme::Event::SelectTheme(theme) => {
+                                return Some((Command::none(), Event::SelectTheme(theme)));
+                            }
+                        }
+                    }
+                }
+            }
+            Message::ThemesPressed => {
+                *screen = Screen::theme();
+            }
         }
         None
     }
@@ -86,7 +104,7 @@ impl State {
             MenuItem {
                 label: "Themes",
                 message: Message::ThemesPressed,
-                is_active: matches!(screen, Screen::Theme),
+                is_active: matches!(screen, Screen::Theme(_)),
             },
         ];
 
@@ -109,10 +127,12 @@ impl State {
                     if is_active {
                         Container::new(text)
                             .style(style::container::menu_selected(theme))
+                            .width(Length::Fill)
                             .into()
                     } else {
                         Button::new(state, text)
                             .style(style::button::menu(theme, is_active))
+                            .width(Length::Fill)
                             .on_press(message)
                             .padding(0)
                             .into()
@@ -120,7 +140,10 @@ impl State {
                 })
                 .collect(),
         );
-        let menu = Scrollable::new(menu_scroll).push(menu).height(Length::Fill);
+        let menu = Scrollable::new(menu_scroll)
+            .push(menu)
+            .height(Length::Fill)
+            .width(Length::Units(125));
 
         let content = Row::new()
             .push(menu)
@@ -146,10 +169,18 @@ struct MenuItem {
 }
 
 impl Screen {
+    fn profile() -> Self {
+        Screen::Profile(profile::State::new())
+    }
+
+    fn theme() -> Self {
+        Screen::Theme(theme::State::new())
+    }
+
     fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
         match self {
             Screen::Profile(state) => state.view(profiles, theme).map(Message::Profile),
-            _ => Column::new().into(),
+            Screen::Theme(state) => state.view(theme).map(Message::Theme),
         }
     }
 }

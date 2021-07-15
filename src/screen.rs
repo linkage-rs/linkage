@@ -27,6 +27,7 @@ pub enum Message {
 
 pub enum Event {
     ExitRequested,
+    SelectTheme(Theme),
 }
 
 impl Screen {
@@ -63,38 +64,39 @@ impl Screen {
                         loading::Event::Load(loaded) => {
                             *self = Screen::training();
                             *profiles = loaded;
-                            None
                         }
                     },
-                    None => None,
+                    None => {}
                 },
-                _ => None,
+                _ => {}
             },
             Screen::Training(state) => match message {
                 Message::Training(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         training::Event::Settings => {
                             *self = Screen::settings();
-                            None
                         }
                     },
-                    None => None,
+                    None => {}
                 },
-                _ => None,
+                _ => {}
             },
             Screen::Settings(state) => match message {
                 Message::Settings(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         settings::Event::Exit => {
                             *self = Screen::training();
-                            None
+                        }
+                        settings::Event::SelectTheme(theme) => {
+                            return Some((Command::none(), Event::SelectTheme(theme)));
                         }
                     },
-                    None => None,
+                    None => {}
                 },
-                _ => None,
+                _ => {}
             },
         }
+        None
     }
 
     pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {

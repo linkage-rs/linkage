@@ -3,7 +3,9 @@ use iced::text_input::{Style, StyleSheet};
 use iced::Color;
 
 pub fn themed(theme: &Theme) -> Themed {
-    Themed { theme: *theme }
+    Themed {
+        theme: theme.clone(),
+    }
 }
 
 pub struct Themed {

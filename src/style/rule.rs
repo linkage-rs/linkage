@@ -3,7 +3,9 @@ use iced::rule::{FillMode, Style, StyleSheet};
 use iced::Color;
 
 pub fn divider(theme: &Theme) -> Divider {
-    Divider { theme: *theme }
+    Divider {
+        theme: theme.clone(),
+    }
 }
 
 pub struct Divider {

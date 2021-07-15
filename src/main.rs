@@ -71,12 +71,19 @@ impl Application for Linkage {
             Message::Event(event) => self.handle_event(event),
             Message::Screen(message) => {
                 let Linkage {
-                    screen, profiles, ..
+                    screen,
+                    theme,
+                    profiles,
+                    ..
                 } = self;
                 if let Some((command, event)) = screen.update(profiles, message) {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
+                        }
+                        screen::Event::SelectTheme(new_theme) => {
+                            *theme = new_theme;
+                            Command::none()
                         }
                     }
                 } else {

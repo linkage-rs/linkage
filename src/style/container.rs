@@ -3,11 +3,15 @@ use iced::container::{Style, StyleSheet};
 use iced::Color;
 
 pub fn primary(theme: &Theme) -> Primary {
-    Primary { theme: *theme }
+    Primary {
+        theme: theme.clone(),
+    }
 }
 
 pub fn menu_selected(theme: &Theme) -> MenuSelected {
-    MenuSelected { theme: *theme }
+    MenuSelected {
+        theme: theme.clone(),
+    }
 }
 
 pub struct Primary {

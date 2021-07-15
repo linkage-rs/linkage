@@ -1,8 +1,9 @@
 use iced::Color;
 use palette::{Mix, Srgb};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Theme {
+    pub name: String,
     pub bg: Color,
     pub text: Color,
     pub target: Color,
@@ -12,8 +13,13 @@ pub struct Theme {
 }
 
 impl Theme {
+    pub fn all() -> Vec<Self> {
+        vec![Self::ayu(), Self::monokai()]
+    }
+
     pub fn monokai() -> Self {
         Self {
+            name: "Monokai".to_string(),
             bg: Color::from_rgba8(0x27, 0x28, 0x22, 1.0),
             text: Color::from_rgba8(0xf8, 0xf8, 0xf2, 1.0),
             target: Color::from_rgba8(0xa6, 0xe2, 0x2e, 1.0),
@@ -25,6 +31,7 @@ impl Theme {
 
     pub fn ayu() -> Self {
         Self {
+            name: "Ayu".to_string(),
             bg: Color::from_rgba8(0x0A, 0x0E, 0x14, 1.0),
             text: Color::from_rgba8(0xB3, 0xB1, 0xAD, 1.0),
             target: Color::from_rgba8(0xc2, 0xd9, 0x4c, 1.0),
