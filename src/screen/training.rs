@@ -220,6 +220,7 @@ impl State {
                         if let Some(words) = profiles.active_mut().add_line(line) {
                             profiles.session_mut().update_words(words)
                         }
+                        profiles.session_mut().fill_next_lines();
                     }
                     None
                 }
@@ -237,6 +238,7 @@ impl State {
                     if let Some(words) = profiles.active_mut().add_line(line) {
                         profiles.session_mut().update_words(words)
                     }
+                    profiles.session_mut().fill_next_lines();
                 }
                 None
             }

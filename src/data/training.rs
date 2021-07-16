@@ -188,19 +188,6 @@ impl Session {
             if let Some(next_target) = self.targets.pop_front() {
                 self.active_hit = self.active_hit.next(next_target);
             } else {
-                while self.next_lines.len() < NEXT_LINES + 1 {
-                    // TODO: Weighted character set selection:
-                    // - More words with characters that are our lower hit percentage
-                    // - Characters that are our slowest
-                    self.next_lines.push(self.words.line(CHARS_PER_LINE));
-                }
-                for c in self.next_lines.remove(0).chars() {
-                    self.targets.push_back(c);
-                }
-
-                let next_target = self.targets.pop_front().unwrap_or(' ');
-                self.active_hit = self.active_hit.next(next_target);
-
                 let line = Line {
                     hits: self.hits.clone(),
                     time: OffsetDateTime::now_utc(),
@@ -218,6 +205,21 @@ impl Session {
         }
 
         None
+    }
+
+    pub fn fill_next_lines(&mut self) {
+        while self.next_lines.len() < NEXT_LINES + 1 {
+            // TODO: Weighted character set selection:
+            // - More words with characters that are our lower hit percentage
+            // - Characters that are our slowest
+            self.next_lines.push(self.words.line(CHARS_PER_LINE));
+        }
+        for c in self.next_lines.remove(0).chars() {
+            self.targets.push_back(c);
+        }
+
+        let next_target = self.targets.pop_front().unwrap_or(' ');
+        self.active_hit = self.active_hit.next(next_target);
     }
 
     pub fn backspace(&mut self) {
