@@ -1,5 +1,5 @@
 use crate::data::profile;
-use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS};
+use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT};
 use crate::data::Theme;
 use crate::font;
 use crate::style;
@@ -41,7 +41,7 @@ impl State {
         Self {
             modifiers: keyboard::Modifiers::default(),
             settings_button: button::State::new(),
-            accuracy_metric: TriplePoint::new(0.65, 0.9, 0.98).unwrap_or_default(),
+            accuracy_metric: TriplePoint::new(0.5, MIN_CLEAN_PCT, 0.975).unwrap_or_default(),
         }
     }
 
@@ -161,10 +161,16 @@ impl State {
                 .clean_letters()
                 .iter()
                 .map(|(ch, val)| {
-                    Text::new(format!("{}: {:.02}", ch, val))
-                        .color(theme.metric(self.accuracy_metric.value(*val)))
-                        .font(font::LIGHT)
-                        .size(12)
+                    Row::new()
+                        .push(Text::new(format!("{}", ch)).font(font::LIGHT).size(12))
+                        .push(
+                            Text::new("\u{25a0}")
+                                .color(theme.metric(self.accuracy_metric.value(*val)))
+                                .font(font::LIGHT)
+                                .size(16),
+                        )
+                        .align_items(Align::Center)
+                        .spacing(5)
                         .into()
                 })
                 .collect(),

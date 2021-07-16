@@ -86,11 +86,12 @@ impl State {
     pub fn new(chars: Vec<char>) -> Self {
         let char_set = chars.iter().cloned().collect();
         let events = chars.iter().map(|&letter| Event::unlock(letter)).collect();
+        let clean = chars.iter().map(|&letter| (letter, 0.0)).collect();
 
         Self {
             char_set,
             timings: HashMap::new(),
-            clean: HashMap::new(),
+            clean,
             events,
         }
     }
