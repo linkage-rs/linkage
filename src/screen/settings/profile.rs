@@ -283,7 +283,9 @@ impl Screen {
                     keyboard::ALL,
                     *layout,
                     Message::LayoutChanged,
-                );
+                )
+                .text_size(15)
+                .style(style::pick_list::themed(theme));
                 let layout_section = Column::new()
                     .spacing(5)
                     .push(layout_title)
