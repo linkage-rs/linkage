@@ -1,4 +1,5 @@
 use crate::data::keyboard::{self, Layout};
+use crate::data::training::Difficulty;
 use crate::data::{self, Theme};
 use crate::font;
 use crate::style;
@@ -27,6 +28,8 @@ pub enum Screen {
     Create {
         accept: button::State,
         cancel: button::State,
+        difficulty: Option<Difficulty>,
+        difficulty_pick_list: pick_list::State<Difficulty>,
         layout: Option<Layout>,
         layout_pick_list: pick_list::State<Layout>,
         name_input: text_input::State,
@@ -41,6 +44,7 @@ pub enum Screen {
         name_value: String,
     },
     View {
+        difficulty_pick_list: pick_list::State<Difficulty>,
         rename_button: button::State,
         // delete_button
     },
@@ -50,6 +54,7 @@ pub enum Screen {
 pub enum Message {
     CreateAccept,
     CreateCancel,
+    DifficultyChanged(Difficulty),
     LayoutChanged(Layout),
     NameInput(String),
     NewProfilePressed,
@@ -72,12 +77,14 @@ impl State {
         match message {
             Message::CreateAccept => {
                 if let Screen::Create {
+                    difficulty: Some(difficulty),
                     layout: Some(layout),
                     name_parsed: Some(name_parsed),
                     ..
                 } = &self.screen
                 {
-                    let profile = data::profile::Profile::new(name_parsed.clone(), *layout);
+                    let profile =
+                        data::profile::Profile::new(name_parsed.clone(), *layout, *difficulty);
                     profiles.insert_active(profile);
 
                     self.screen = Screen::viewing();
@@ -88,6 +95,17 @@ impl State {
             Message::CreateCancel => {
                 self.screen = Screen::viewing();
             }
+            Message::DifficultyChanged(new_difficulty) => match self.screen {
+                Screen::Create {
+                    ref mut difficulty, ..
+                } => {
+                    *difficulty = Some(new_difficulty);
+                }
+                Screen::View { .. } => {
+                    profiles.active_mut().difficulty = new_difficulty;
+                }
+                _ => {}
+            },
             Message::LayoutChanged(new_layout) => {
                 if let Screen::Create { ref mut layout, .. } = &mut self.screen {
                     *layout = Some(new_layout);
@@ -233,6 +251,8 @@ impl Screen {
         Self::Create {
             accept: button::State::new(),
             cancel: button::State::new(),
+            difficulty: Some(Difficulty::default()),
+            difficulty_pick_list: pick_list::State::default(),
             layout: None,
             layout_pick_list: pick_list::State::default(),
             name_input: text_input::State::new(),
@@ -253,6 +273,7 @@ impl Screen {
 
     fn viewing() -> Self {
         Self::View {
+            difficulty_pick_list: pick_list::State::default(),
             rename_button: button::State::new(),
         }
     }
@@ -264,6 +285,8 @@ impl Screen {
             Screen::Create {
                 accept,
                 cancel,
+                difficulty,
+                difficulty_pick_list,
                 layout,
                 layout_pick_list,
                 name_input,
@@ -291,6 +314,20 @@ impl Screen {
                     .push(layout_title)
                     .push(layout_pick_list);
 
+                let difficulty_title = Text::new("Difficulty").size(14).font(font::THIN);
+                let difficulty_pick_list = PickList::new(
+                    difficulty_pick_list,
+                    Difficulty::ALL,
+                    *difficulty,
+                    Message::DifficultyChanged,
+                )
+                .text_size(15)
+                .style(style::pick_list::themed(theme));
+                let difficulty_section = Column::new()
+                    .spacing(5)
+                    .push(difficulty_title)
+                    .push(difficulty_pick_list);
+
                 let mut accept = Button::new(accept, centered_text("\u{2714}", 20, 20))
                     .style(style::button::accept(theme));
                 if name_parsed.is_some() && layout.is_some() {
@@ -306,6 +343,7 @@ impl Screen {
                 content = content
                     .push(name_input)
                     .push(layout_section)
+                    .push(difficulty_section)
                     .push(button_row);
             }
             Screen::Rename {
@@ -342,7 +380,10 @@ impl Screen {
 
                 content = content.push(name_row);
             }
-            Screen::View { rename_button } => {
+            Screen::View {
+                difficulty_pick_list,
+                rename_button,
+            } => {
                 let rename_button = Button::new(
                     rename_button,
                     Text::new(profiles.active().name.to_string()).size(18),
@@ -359,7 +400,24 @@ impl Screen {
                     .push(layout_title)
                     .push(layout_name);
 
-                content = content.push(rename_button).push(layout_section);
+                let difficulty_title = Text::new("Difficulty").size(14).font(font::THIN);
+                let difficulty_pick_list = PickList::new(
+                    difficulty_pick_list,
+                    Difficulty::ALL,
+                    Some(profiles.active().difficulty),
+                    Message::DifficultyChanged,
+                )
+                .text_size(15)
+                .style(style::pick_list::themed(theme));
+                let difficulty_section = Column::new()
+                    .spacing(5)
+                    .push(difficulty_title)
+                    .push(difficulty_pick_list);
+
+                content = content
+                    .push(rename_button)
+                    .push(layout_section)
+                    .push(difficulty_section);
             }
         }
 

@@ -1,5 +1,5 @@
 use crate::data::profile;
-use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT, MIN_WPM};
+use crate::data::training::{Difficulty, TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT};
 use crate::data::Theme;
 use crate::font;
 use crate::style;
@@ -38,12 +38,17 @@ const ROW_ERROR_WIDTH: u16 = (MAX_ERRORS - 1) as u16 * CHAR_WIDTH;
 const LINE_SPACE: u16 = 10;
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(difficulty: &Difficulty) -> Self {
         Self {
             modifiers: keyboard::Modifiers::default(),
             settings_button: button::State::new(),
             accuracy_metric: TriplePoint::new(0.5, MIN_CLEAN_PCT, 0.975).unwrap_or_default(),
-            wpm_metric: TriplePoint::new(10.0, MIN_WPM as f32, 60.0).unwrap_or_default(),
+            wpm_metric: TriplePoint::new(
+                10.0,
+                f64::from(difficulty.words_per_minute()) as f32,
+                60.0,
+            )
+            .unwrap_or_default(),
         }
     }
 

@@ -1,5 +1,5 @@
 use super::keyboard::Layout;
-use super::training::{Line, Session, State};
+use super::training::{Difficulty, Line, Session, State};
 use super::words;
 use super::zipper_list::{Item, ZipperList};
 use std::collections::HashSet;
@@ -11,6 +11,7 @@ pub struct Name(String);
 pub struct Profile {
     name: Name,
     layout: Layout,
+    difficulty: Difficulty,
     state: State,
     words: words::Setting,
 }
@@ -19,6 +20,7 @@ pub struct Profile {
 pub struct Active {
     pub name: Name,
     pub layout: Layout,
+    pub difficulty: Difficulty,
     pub state: State,
     pub session: Session,
 }
@@ -36,13 +38,14 @@ pub struct Saved {
 }
 
 impl Profile {
-    pub fn new(name: Name, layout: Layout) -> Self {
+    pub fn new(name: Name, layout: Layout, difficulty: Difficulty) -> Self {
         let chars = layout.initial_chars();
         let state = State::new(chars);
 
         Self {
             name,
             layout,
+            difficulty,
             state,
             words: words::Setting::default(),
         }
@@ -58,6 +61,7 @@ impl Default for Profile {
         Self {
             name: Name::unchecked_from("Default Profile"),
             layout,
+            difficulty: Difficulty::default(),
             state,
             words: words::Setting::default(),
         }
@@ -67,7 +71,7 @@ impl Default for Profile {
 impl Active {
     pub fn add_line(&mut self, line: Line) -> Option<words::Words> {
         self.state
-            .add_line(line, &self.layout)
+            .add_line(line, &self.layout, &self.difficulty)
             .map(|char_set| self.session.words_setting().get_words(char_set))
     }
 }
@@ -139,6 +143,7 @@ impl From<Profile> for Active {
         Self {
             name: profile.name,
             layout: profile.layout,
+            difficulty: profile.difficulty,
             state: profile.state,
             session,
         }
@@ -150,6 +155,7 @@ impl From<Active> for Profile {
         Self {
             name: active.name,
             layout: active.layout,
+            difficulty: active.difficulty,
             state: active.state,
             words: active.session.words_setting().clone(),
         }

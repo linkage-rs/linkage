@@ -39,14 +39,14 @@ impl Screen {
         Self::Settings(settings::State::new())
     }
 
-    pub fn training() -> Self {
-        Self::Training(training::State::new())
+    pub fn training(profiles: &profile::List) -> Self {
+        Self::Training(training::State::new(&profiles.active().difficulty))
     }
 
-    pub fn go_back(&mut self) {
+    pub fn go_back(&mut self, profiles: &profile::List) {
         match self {
             Screen::Settings(..) => {
-                *self = Screen::training();
+                *self = Screen::training(profiles);
             }
             _ => {}
         }
@@ -62,7 +62,7 @@ impl Screen {
                 Message::Loading(message) => match state.update(message) {
                     Some(event) => match event {
                         loading::Event::Load(loaded) => {
-                            *self = Screen::training();
+                            *self = Screen::training(&profiles);
                             *profiles = loaded;
                         }
                     },
@@ -85,7 +85,7 @@ impl Screen {
                 Message::Settings(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         settings::Event::Exit => {
-                            *self = Screen::training();
+                            *self = Screen::training(&profiles);
                         }
                         settings::Event::SelectTheme(theme) => {
                             return Some((Command::none(), Event::SelectTheme(theme)));

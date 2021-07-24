@@ -161,7 +161,7 @@ impl Linkage {
     }
 
     fn go_back(&mut self) -> Command<Message> {
-        self.screen.go_back();
+        self.screen.go_back(&self.profiles);
         Command::none()
     }
 }

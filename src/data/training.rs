@@ -12,7 +12,6 @@ pub const MAX_ERRORS: usize = 5;
 pub const NUM_RECENT_TIMINGS: usize = 16;
 pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 16.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
-pub const MIN_WPM: f64 = 30.0;
 const CHARACTERS_PER_WORD: f64 = 5.0;
 
 #[derive(Debug, Clone)]
@@ -29,6 +28,14 @@ pub struct State {
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
 pub struct WordsPerMinute(f64);
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
+pub enum Difficulty {
+    Easy,
+    Casual,
+    Normal,
+    Strict,
+}
 
 #[derive(Debug, Clone)]
 pub struct Stats {
@@ -118,7 +125,12 @@ impl State {
     }
 
     /// Add a line of completed training. Optionally returns a new char set.
-    pub fn add_line(&mut self, line: Line, layout: &Layout) -> Option<CharSet> {
+    pub fn add_line(
+        &mut self,
+        line: Line,
+        layout: &Layout,
+        difficulty: &Difficulty,
+    ) -> Option<CharSet> {
         for hit in line.hits.iter().skip(1) {
             if hit.misses.is_empty() {
                 self.timings.entry(hit.target).or_default().push(hit.dt);
@@ -140,7 +152,7 @@ impl State {
         let all_fast_enough = self
             .timings
             .iter()
-            .all(|(_, stats)| f64::from(stats.wpm_harmonic_mean) >= MIN_WPM);
+            .all(|(_, stats)| stats.wpm_harmonic_mean >= difficulty.words_per_minute());
 
         if all_clean && all_fast_enough {
             if let Some(letter) = layout.next_char(&self.char_set) {
@@ -182,6 +194,43 @@ impl From<f64> for WordsPerMinute {
 impl From<WordsPerMinute> for f64 {
     fn from(wpm: WordsPerMinute) -> f64 {
         wpm.0
+    }
+}
+
+impl Difficulty {
+    pub const ALL: &'static [Difficulty] = &[
+        Difficulty::Easy,
+        Difficulty::Casual,
+        Difficulty::Normal,
+        Difficulty::Strict,
+    ];
+
+    pub fn words_per_minute(&self) -> WordsPerMinute {
+        match self {
+            Difficulty::Easy => WordsPerMinute(5.0),
+            Difficulty::Casual => WordsPerMinute(15.0),
+            Difficulty::Normal => WordsPerMinute(30.0),
+            Difficulty::Strict => WordsPerMinute(45.0),
+        }
+    }
+}
+
+impl Default for Difficulty {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+impl std::fmt::Display for Difficulty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Difficulty::Easy => "Easy",
+            Difficulty::Casual => "Casual",
+            Difficulty::Normal => "Normal",
+            Difficulty::Strict => "Strict",
+        };
+
+        write!(f, "{} ({} wpm)", s, f64::from(self.words_per_minute()))
     }
 }
 
