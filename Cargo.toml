@@ -9,8 +9,7 @@ itertools = "0.10.0"
 palette = "0.5.0"
 rand = "0.8"
 serde_json = "1.0"
-# Needed to solve an Iced dependency problem...
-web-sys = "0.3.50"
+statrs = "0.15.0"
 
 [dependencies.time]
 version = "0.2"
