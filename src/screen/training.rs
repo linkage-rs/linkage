@@ -1,5 +1,5 @@
 use crate::data::profile;
-use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT};
+use crate::data::training::{TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT, MIN_WPM};
 use crate::data::Theme;
 use crate::font;
 use crate::style;
@@ -16,6 +16,7 @@ pub struct State {
     modifiers: keyboard::Modifiers,
     settings_button: button::State,
     accuracy_metric: TriplePoint,
+    wpm_metric: TriplePoint,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +43,7 @@ impl State {
             modifiers: keyboard::Modifiers::default(),
             settings_button: button::State::new(),
             accuracy_metric: TriplePoint::new(0.5, MIN_CLEAN_PCT, 0.975).unwrap_or_default(),
+            wpm_metric: TriplePoint::new(10.0, MIN_WPM as f32, 60.0).unwrap_or_default(),
         }
     }
 
@@ -160,9 +162,11 @@ impl State {
                 .state
                 .clean_letters()
                 .iter()
+                .filter(|(ch, _)| *ch != ' ')
                 .map(|(ch, val)| {
-                    Row::new()
-                        .push(Text::new(format!("{}", ch)).font(font::LIGHT).size(12))
+                    let stats = profiles.active().state.timings.get(ch);
+                    let mut row = Row::new()
+                        .push(Text::new(ch.to_string()).font(font::LIGHT).size(12))
                         .push(
                             Text::new("\u{25a0}")
                                 .color(theme.metric(self.accuracy_metric.value(*val)))
@@ -170,8 +174,18 @@ impl State {
                                 .size(16),
                         )
                         .align_items(Align::Center)
-                        .spacing(5)
-                        .into()
+                        .spacing(5);
+
+                    if let Some(stats) = stats {
+                        let wpm = f64::from(stats.wpm_harmonic_mean) as f32;
+                        row = row.push(
+                            Text::new("\u{25a0}")
+                                .color(theme.metric(self.wpm_metric.value(wpm)))
+                                .font(font::LIGHT)
+                                .size(16),
+                        )
+                    }
+                    row.into()
                 })
                 .collect(),
         )

@@ -2,26 +2,39 @@ use super::keyboard::Layout;
 use super::words::{self, Words};
 use super::CharSet;
 use itertools::Itertools;
+use statrs::statistics::{self, Distribution, Statistics};
 use std::collections::{HashMap, HashSet, VecDeque};
 use time::{Duration, Instant, OffsetDateTime};
 
 pub const CHARS_PER_LINE: usize = 52;
-pub const NEXT_LINES: usize = 2;
+pub const NEXT_LINES: usize = 1;
 pub const MAX_ERRORS: usize = 5;
-pub const NUM_RECENT_TIMINGS: usize = 1000;
-pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 50.0);
+pub const NUM_RECENT_TIMINGS: usize = 16;
+pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 16.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
+pub const MIN_WPM: f64 = 30.0;
+const CHARACTERS_PER_WORD: f64 = 5.0;
 
 #[derive(Debug, Clone)]
 pub struct State {
     /// Which characters are in our set
     char_set: CharSet,
-    /// How long it took to type each letter, recent sample
-    timings: HashMap<char, VecDeque<Duration>>,
+    /// Stats for each letter
+    pub timings: HashMap<char, Stats>,
     /// Smoothed clean proportion
     clean: HashMap<char, f32>,
     /// Event log
     events: Vec<Event>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
+pub struct WordsPerMinute(f64);
+
+#[derive(Debug, Clone)]
+pub struct Stats {
+    raw: Vec<WordsPerMinute>,
+    pub wpm_mean: WordsPerMinute,
+    pub wpm_harmonic_mean: WordsPerMinute,
 }
 
 /// Event log messages that record when certain state transitions occurred.
@@ -87,10 +100,14 @@ impl State {
         let char_set = chars.iter().cloned().collect();
         let events = chars.iter().map(|&letter| Event::unlock(letter)).collect();
         let clean = chars.iter().map(|&letter| (letter, 0.0)).collect();
+        let timings = chars
+            .iter()
+            .map(|&letter| (letter, Stats::default()))
+            .collect();
 
         Self {
             char_set,
-            timings: HashMap::new(),
+            timings,
             clean,
             events,
         }
@@ -102,14 +119,9 @@ impl State {
 
     /// Add a line of completed training. Optionally returns a new char set.
     pub fn add_line(&mut self, line: Line, layout: &Layout) -> Option<CharSet> {
-        for hit in line.hits {
-            if let Some(timings) = self.timings.get_mut(&hit.target) {
-                timings.push_back(hit.dt);
-                while timings.len() > NUM_RECENT_TIMINGS {
-                    timings.pop_front();
-                }
-            } else {
-                self.timings.insert(hit.target, vec![hit.dt].into());
+        for hit in line.hits.iter().skip(1) {
+            if hit.misses.is_empty() {
+                self.timings.entry(hit.target).or_default().push(hit.dt);
             }
 
             let clean_signal = if hit.misses.is_empty() { 1.0 } else { 0.0 };
@@ -120,10 +132,17 @@ impl State {
                     .insert(hit.target, clean_signal * CLEAN_ALPHA_COEFF);
             }
         }
+        self.timings
+            .iter_mut()
+            .for_each(|(_, stats)| stats.recompute());
 
         let all_clean = self.clean.iter().all(|(_, &v)| v >= MIN_CLEAN_PCT);
+        let all_fast_enough = self
+            .timings
+            .iter()
+            .all(|(_, stats)| f64::from(stats.wpm_harmonic_mean) >= MIN_WPM);
 
-        if all_clean {
+        if all_clean && all_fast_enough {
             if let Some(letter) = layout.next_char(&self.char_set) {
                 self.char_set.insert(letter);
                 self.clean.insert(letter, 0.0);
@@ -143,6 +162,52 @@ impl State {
             .into_iter()
             .sorted_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal))
             .collect()
+    }
+}
+
+impl From<Duration> for WordsPerMinute {
+    fn from(duration: Duration) -> Self {
+        let seconds_per_character = duration.as_seconds_f64();
+        let characters_per_minute = 60.0 / seconds_per_character;
+        Self(characters_per_minute / CHARACTERS_PER_WORD)
+    }
+}
+
+impl From<f64> for WordsPerMinute {
+    fn from(f: f64) -> Self {
+        Self(f)
+    }
+}
+
+impl From<WordsPerMinute> for f64 {
+    fn from(wpm: WordsPerMinute) -> f64 {
+        wpm.0
+    }
+}
+
+impl Stats {
+    pub fn push(&mut self, duration: Duration) {
+        self.raw.push(duration.into());
+        while self.raw.len() > NUM_RECENT_TIMINGS {
+            self.raw.remove(0);
+        }
+    }
+
+    pub fn recompute(&mut self) {
+        let mut raw: Vec<f64> = self.raw.iter().map(move |&v| f64::from(v)).collect();
+        let data = statistics::Data::new(raw.as_mut_slice());
+        self.wpm_mean = data.mean().unwrap_or_default().into();
+        self.wpm_harmonic_mean = raw.harmonic_mean().into();
+    }
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            raw: Vec::new(),
+            wpm_mean: WordsPerMinute::default(),
+            wpm_harmonic_mean: WordsPerMinute::default(),
+        }
     }
 }
 
@@ -238,7 +303,7 @@ impl Session {
 }
 
 impl Hit {
-    const MAX_DURATION_NS: i64 = 5_000_000_000;
+    pub const MAX_DURATION_NS: i64 = 5_000_000_000;
 
     pub fn new(target: char, prev: char) -> Self {
         Self {

@@ -12,13 +12,6 @@ pub struct Themed {
     theme: Theme,
 }
 
-// pub struct Style {
-//     pub background: Background,
-//     pub border_radius: f32,
-//     pub border_width: f32,
-//     pub border_color: Color,
-// }
-
 impl StyleSheet for Themed {
     fn active(&self) -> Style {
         Style {
