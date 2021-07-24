@@ -21,7 +21,7 @@ features = ["derive"]
 
 [dependencies.iced]
 version = "0.3"
-features = ["palette"]
+features = ["glow", "palette"]
 
 [dependencies.iced_native]
 version = "0.4"
