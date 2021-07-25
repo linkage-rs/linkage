@@ -10,7 +10,7 @@ pub const CHARS_PER_LINE: usize = 52;
 pub const NEXT_LINES: usize = 1;
 pub const MAX_ERRORS: usize = 5;
 pub const NUM_RECENT_TIMINGS: usize = 16;
-pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 16.0);
+pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 10.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
 const CHARACTERS_PER_WORD: f64 = 5.0;
 
