@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ZipperList<T, U> {
     prev: Vec<T>,
     current: U,

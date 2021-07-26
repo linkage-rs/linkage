@@ -28,6 +28,7 @@ pub enum Message {
 }
 
 pub enum Event {
+    Save,
     Settings,
 }
 
@@ -237,9 +238,10 @@ impl State {
                 KeyCode::Space => {
                     if let Some(line) = profiles.session_mut().apply_char(' ') {
                         if let Some(words) = profiles.active_mut().add_line(line) {
-                            profiles.session_mut().update_words(words)
+                            profiles.session_mut().update_words(words);
                         }
                         profiles.session_mut().fill_next_lines();
+                        return Some((Command::none(), Event::Save));
                     }
                     None
                 }
@@ -255,9 +257,10 @@ impl State {
             {
                 if let Some(line) = profiles.session_mut().apply_char(c) {
                     if let Some(words) = profiles.active_mut().add_line(line) {
-                        profiles.session_mut().update_words(words)
+                        profiles.session_mut().update_words(words);
                     }
                     profiles.session_mut().fill_next_lines();
+                    return Some((Command::none(), Event::Save));
                 }
                 None
             }

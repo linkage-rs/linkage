@@ -39,6 +39,7 @@ struct Linkage {
 #[derive(Debug, Clone)]
 enum Message {
     Event(iced_native::Event),
+    Saved,
     Screen(screen::Message),
 }
 
@@ -69,6 +70,7 @@ impl Application for Linkage {
     fn update(&mut self, message: Message, _clipboard: &mut Clipboard) -> Command<Message> {
         match message {
             Message::Event(event) => self.handle_event(event),
+            Message::Saved => Command::none(),
             Message::Screen(message) => {
                 let Linkage {
                     screen,
@@ -80,6 +82,9 @@ impl Application for Linkage {
                     match event {
                         screen::Event::ExitRequested => {
                             Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
+                        }
+                        screen::Event::Save => {
+                            Command::perform(save(self.profiles.clone().into()), |_| Message::Saved)
                         }
                         screen::Event::SelectTheme(new_theme) => {
                             *theme = new_theme;
@@ -164,4 +169,8 @@ impl Linkage {
         self.screen.go_back(&self.profiles);
         Command::none()
     }
+}
+
+async fn save(saved: data::profile::Saved) -> bool {
+    saved.save().await.is_ok()
 }

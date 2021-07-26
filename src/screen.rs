@@ -27,6 +27,7 @@ pub enum Message {
 
 pub enum Event {
     ExitRequested,
+    Save,
     SelectTheme(Theme),
 }
 
@@ -73,6 +74,9 @@ impl Screen {
             Screen::Training(state) => match message {
                 Message::Training(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
+                        training::Event::Save => {
+                            return Some((Command::none(), Event::Save));
+                        }
                         training::Event::Settings => {
                             *self = Screen::settings();
                         }
@@ -86,6 +90,9 @@ impl Screen {
                     Some((_command, event)) => match event {
                         settings::Event::Exit => {
                             *self = Screen::training(&profiles);
+                        }
+                        settings::Event::Save => {
+                            return Some((Command::none(), Event::Save));
                         }
                         settings::Event::SelectTheme(theme) => {
                             return Some((Command::none(), Event::SelectTheme(theme)));

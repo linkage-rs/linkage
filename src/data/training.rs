@@ -2,6 +2,7 @@ use super::keyboard::Layout;
 use super::words::{self, Words};
 use super::CharSet;
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use statrs::statistics::{self, Distribution, Statistics};
 use std::collections::{HashMap, HashSet, VecDeque};
 use time::{Duration, Instant, OffsetDateTime};
@@ -14,7 +15,7 @@ pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 10.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
 const CHARACTERS_PER_WORD: f64 = 5.0;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct State {
     /// Which characters are in our set
     char_set: CharSet,
@@ -26,10 +27,10 @@ pub struct State {
     events: Vec<Event>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct WordsPerMinute(f64);
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub enum Difficulty {
     Easy,
     Casual,
@@ -37,7 +38,7 @@ pub enum Difficulty {
     Strict,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Stats {
     raw: Vec<WordsPerMinute>,
     pub wpm_mean: WordsPerMinute,
@@ -45,7 +46,7 @@ pub struct Stats {
 }
 
 /// Event log messages that record when certain state transitions occurred.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Event {
     /// New letter added to our training set
     Unlock { letter: char, time: OffsetDateTime },

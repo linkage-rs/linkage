@@ -103,6 +103,8 @@ impl State {
                 }
                 Screen::View { .. } => {
                     profiles.active_mut().difficulty = new_difficulty;
+
+                    return true;
                 }
                 _ => {}
             },
@@ -138,6 +140,7 @@ impl State {
             Message::ProfilePressed(index) => {
                 profiles.select(index);
                 self.screen = Screen::viewing();
+                return true;
             }
             Message::RenameAccept => {
                 if let Screen::Rename {

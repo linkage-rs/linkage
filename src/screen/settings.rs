@@ -33,6 +33,7 @@ pub enum Message {
 
 pub enum Event {
     Exit,
+    Save,
     SelectTheme(Theme),
 }
 
@@ -58,7 +59,9 @@ impl State {
             }
             Message::Profile(message) => {
                 if let Screen::Profile(state) = screen {
-                    state.update(profiles, message);
+                    if state.update(profiles, message) {
+                        return Some((Command::none(), Event::Save));
+                    }
                 }
             }
             Message::ProfilesPressed => {

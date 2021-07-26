@@ -1,8 +1,9 @@
 use super::dictionary::Dictionary;
 use super::random::Random;
 use super::CharSet;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum Setting {
     Dictionary,
     Random,
