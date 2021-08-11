@@ -37,6 +37,8 @@ const ROW_CHARS: u16 = (CHARS_PER_LINE + MAX_ERRORS - 1) as u16;
 const ROW_WIDTH: u16 = CHAR_WIDTH * ROW_CHARS;
 const ROW_ERROR_WIDTH: u16 = (MAX_ERRORS - 1) as u16 * CHAR_WIDTH;
 const LINE_SPACE: u16 = 10;
+const STATS_WIDTH: u16 = 75;
+pub const OVERALL_WIDTH: u16 = 2 * STATS_WIDTH + ROW_WIDTH;
 
 impl State {
     pub fn new(difficulty: &Difficulty) -> Self {
@@ -155,14 +157,14 @@ impl State {
         .width(Length::Units(ROW_WIDTH));
 
         let training = Column::with_children(vec![content_active.into(), content_next.into()])
-            .padding([0, 0, 0, ROW_ERROR_WIDTH]);
+            .padding([0, STATS_WIDTH.saturating_sub(ROW_ERROR_WIDTH), 0, 0]);
         let training = Container::new(training)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
             .center_y();
 
-        let clean_letters = Column::with_children(
+        let letter_stats = Column::with_children(
             profiles
                 .active()
                 .state
@@ -195,11 +197,12 @@ impl State {
                 })
                 .collect(),
         )
+        .width(Length::Units(STATS_WIDTH))
         .spacing(2)
         .padding(5);
 
         let content = Row::new()
-            .push(clean_letters)
+            .push(letter_stats)
             .push(training)
             .width(Length::Fill)
             .height(Length::Fill);

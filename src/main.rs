@@ -24,6 +24,10 @@ pub fn main() -> iced::Result {
     Linkage::run(Settings {
         default_font,
         exit_on_close_request: false,
+        window: iced::window::Settings {
+            min_size: Some((screen::training::OVERALL_WIDTH as u32, 256)),
+            ..Default::default()
+        },
         ..Settings::default()
     })
 }
