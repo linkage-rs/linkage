@@ -1,3 +1,4 @@
+use crate::data;
 use crate::data::profile;
 use crate::data::Theme;
 
@@ -8,16 +9,18 @@ pub struct State {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Loaded(profile::Saved),
+    Loaded(data::Saved),
 }
 
 pub enum Event {
-    Load(profile::List),
+    Load {
+        profiles: profile::List,
+        theme: Theme,
+    },
 }
 
 pub async fn load() -> Message {
-    let loaded = profile::Saved::load().await;
-    let saved = loaded.unwrap_or_else(|_| profile::Saved::default());
+    let saved = data::Saved::load().await.unwrap_or_default();
     Message::Loaded(saved)
 }
 
@@ -32,7 +35,17 @@ impl State {
 
     pub fn update(&mut self, message: Message) -> Option<Event> {
         match message {
-            Message::Loaded(saved) => Some(Event::Load(saved.into())),
+            Message::Loaded(saved) => {
+                let data::Saved {
+                    profiles,
+                    theme_name,
+                    ..
+                } = saved;
+                Some(Event::Load {
+                    profiles: profiles.into(),
+                    theme: Theme::from_name(&theme_name).unwrap_or_default(),
+                })
+            }
         }
     }
 }

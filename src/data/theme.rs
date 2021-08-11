@@ -17,6 +17,10 @@ impl Theme {
         vec![Self::ayu(), Self::monokai()]
     }
 
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::all().iter().find(|&item| item.name == name).cloned()
+    }
+
     pub fn monokai() -> Self {
         Self {
             name: "Monokai".to_string(),
@@ -55,5 +59,11 @@ impl Theme {
             let target = Srgb::from(self.target).into_linear();
             return Srgb::from_linear(text.mix(&target, pct)).into();
         }
+    }
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Theme::monokai()
     }
 }

@@ -78,17 +78,16 @@ impl Application for Linkage {
                     profiles,
                     ..
                 } = self;
-                if let Some((command, event)) = screen.update(profiles, message) {
+                if let Some(event) = screen.update(profiles, message) {
                     match event {
                         screen::Event::ExitRequested => {
-                            Command::batch(vec![command.map(Message::Screen), self.prepare_close()])
+                            self.prepare_close();
+                            Command::none()
                         }
-                        screen::Event::Save => {
-                            Command::perform(save(self.profiles.clone().into()), |_| Message::Saved)
-                        }
+                        screen::Event::Save => self.save(),
                         screen::Event::SelectTheme(new_theme) => {
                             *theme = new_theme;
-                            Command::none()
+                            self.save()
                         }
                     }
                 } else {
@@ -169,8 +168,13 @@ impl Linkage {
         self.screen.go_back(&self.profiles);
         Command::none()
     }
+
+    fn save(&self) -> Command<Message> {
+        let saved = data::Saved::new(self.profiles.clone(), &self.theme);
+        Command::perform(save(saved), |_| Message::Saved)
+    }
 }
 
-async fn save(saved: data::profile::Saved) -> bool {
+async fn save(saved: data::Saved) -> bool {
     saved.save().await.is_ok()
 }

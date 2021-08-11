@@ -1,6 +1,6 @@
 use crate::data::profile;
 use crate::data::Theme;
-use iced::{Command, Element, Subscription};
+use iced::{Element, Subscription};
 
 pub mod loading;
 mod settings;
@@ -53,18 +53,18 @@ impl Screen {
         }
     }
 
-    pub fn update(
-        &mut self,
-        profiles: &mut profile::List,
-        message: Message,
-    ) -> Option<(Command<Message>, Event)> {
+    pub fn update(&mut self, profiles: &mut profile::List, message: Message) -> Option<Event> {
         match self {
             Screen::Loading(state) => match message {
                 Message::Loading(message) => match state.update(message) {
                     Some(event) => match event {
-                        loading::Event::Load(loaded) => {
-                            *self = Screen::training(&profiles);
+                        loading::Event::Load {
+                            profiles: loaded,
+                            theme,
+                        } => {
                             *profiles = loaded;
+                            *self = Screen::training(&profiles);
+                            return Some(Event::SelectTheme(theme));
                         }
                     },
                     None => {}
@@ -75,7 +75,7 @@ impl Screen {
                 Message::Training(message) => match state.update(profiles, message) {
                     Some((_command, event)) => match event {
                         training::Event::Save => {
-                            return Some((Command::none(), Event::Save));
+                            return Some(Event::Save);
                         }
                         training::Event::Settings => {
                             *self = Screen::settings();
@@ -87,15 +87,15 @@ impl Screen {
             },
             Screen::Settings(state) => match message {
                 Message::Settings(message) => match state.update(profiles, message) {
-                    Some((_command, event)) => match event {
+                    Some(event) => match event {
                         settings::Event::Exit => {
                             *self = Screen::training(&profiles);
                         }
                         settings::Event::Save => {
-                            return Some((Command::none(), Event::Save));
+                            return Some(Event::Save);
                         }
                         settings::Event::SelectTheme(theme) => {
-                            return Some((Command::none(), Event::SelectTheme(theme)));
+                            return Some(Event::SelectTheme(theme));
                         }
                     },
                     None => {}

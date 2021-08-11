@@ -4,7 +4,6 @@ use super::words;
 use super::zipper_list::{Item, ZipperList};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Name(String);
@@ -134,29 +133,6 @@ impl Default for List {
 }
 
 impl Saved {
-    pub async fn load() -> Result<Self, Error> {
-        let path = Self::path().ok_or(Error::Corrupted)?;
-        let data = tokio::fs::read(path).await.map_err(Error::FileSystem)?;
-        let data = String::from_utf8_lossy(&data);
-        serde_json::from_str(&data).map_err(Error::Serde)
-    }
-
-    pub async fn save(&self) -> Result<(), Error> {
-        let path = Self::path().ok_or(Error::Corrupted)?;
-        let data = serde_json::to_string(&self).map_err(Error::Serde)?;
-
-        tokio::fs::write(path, data.into_bytes())
-            .await
-            .map_err(Error::FileSystem)
-    }
-
-    fn path() -> Option<PathBuf> {
-        let mut path = dirs_next::data_dir()?;
-        path.push("Linkage");
-        path.push("profiles.dat");
-        Some(path)
-    }
-
     fn parts(self) -> (Vec<Profile>, Profile, Vec<Profile>) {
         (self.prev, self.current, self.next)
     }
@@ -250,11 +226,4 @@ impl std::fmt::Display for Name {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
-}
-
-#[derive(Debug)]
-pub enum Error {
-    Corrupted,
-    FileSystem(std::io::Error),
-    Serde(serde_json::Error),
 }

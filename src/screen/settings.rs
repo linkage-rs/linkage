@@ -3,7 +3,7 @@ use crate::style;
 
 use iced::button::{self, Button};
 use iced::scrollable::{self, Scrollable};
-use iced::{Column, Command, Container, Element, Length, Row, Rule, Text};
+use iced::{Column, Container, Element, Length, Row, Rule, Text};
 
 mod profile;
 mod theme;
@@ -51,16 +51,16 @@ impl State {
         &mut self,
         profiles: &mut data::profile::List,
         message: Message,
-    ) -> Option<(Command<Message>, Event)> {
+    ) -> Option<Event> {
         let State { ref mut screen, .. } = self;
         match message {
             Message::BackButtonPressed => {
-                return Some((Command::none(), Event::Exit));
+                return Some(Event::Exit);
             }
             Message::Profile(message) => {
                 if let Screen::Profile(state) = screen {
                     if state.update(profiles, message) {
-                        return Some((Command::none(), Event::Save));
+                        return Some(Event::Save);
                     }
                 }
             }
@@ -72,7 +72,7 @@ impl State {
                     if let Some(event) = state.update(message) {
                         match event {
                             theme::Event::SelectTheme(theme) => {
-                                return Some((Command::none(), Event::SelectTheme(theme)));
+                                return Some(Event::SelectTheme(theme));
                             }
                         }
                     }
