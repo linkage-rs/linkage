@@ -182,7 +182,8 @@ impl From<Duration> for WordsPerMinute {
     fn from(duration: Duration) -> Self {
         let seconds_per_character = duration.as_seconds_f64();
         let characters_per_minute = 60.0 / seconds_per_character;
-        Self(characters_per_minute / CHARACTERS_PER_WORD)
+        let words_per_minute = characters_per_minute / CHARACTERS_PER_WORD;
+        Self(round(words_per_minute, 2))
     }
 }
 
@@ -246,8 +247,8 @@ impl Stats {
     pub fn recompute(&mut self) {
         let mut raw: Vec<f64> = self.raw.iter().map(move |&v| f64::from(v)).collect();
         let data = statistics::Data::new(raw.as_mut_slice());
-        self.wpm_mean = data.mean().unwrap_or_default().into();
-        self.wpm_harmonic_mean = raw.harmonic_mean().into();
+        self.wpm_mean = round(data.mean().unwrap_or_default(), 2).into();
+        self.wpm_harmonic_mean = round(raw.harmonic_mean(), 2).into();
     }
 }
 
@@ -413,4 +414,9 @@ impl TriplePoint {
             1.0
         }
     }
+}
+
+fn round(n: f64, places: i32) -> f64 {
+    let factor = 10.0_f64.powi(places);
+    (n * factor).round() / factor
 }
