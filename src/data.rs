@@ -35,14 +35,14 @@ impl Saved {
     }
 
     pub async fn load() -> Result<Self, Error> {
-        let path = Self::path().ok_or(Error::Corrupted)?;
+        let path = Self::path().await.ok_or(Error::Corrupted)?;
         let data = tokio::fs::read(path).await.map_err(Error::FileSystem)?;
         let data = String::from_utf8_lossy(&data);
         serde_json::from_str(&data).map_err(Error::Serde)
     }
 
     pub async fn save(&self) -> Result<(), Error> {
-        let path = Self::path().ok_or(Error::Corrupted)?;
+        let path = Self::path().await.ok_or(Error::Corrupted)?;
         let data = serde_json::to_string(&self).map_err(Error::Serde)?;
 
         tokio::fs::write(path, data.into_bytes())
@@ -50,9 +50,10 @@ impl Saved {
             .map_err(Error::FileSystem)
     }
 
-    fn path() -> Option<PathBuf> {
+    async fn path() -> Option<PathBuf> {
         let mut path = dirs_next::data_dir()?;
         path.push("Linkage");
+        tokio::fs::create_dir_all(&path).await.ok()?;
         path.push("save.dat");
         Some(path)
     }
