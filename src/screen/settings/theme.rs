@@ -2,7 +2,7 @@ use crate::data::Theme;
 use crate::style;
 use iced::button::{self, Button};
 use iced::scrollable::{self, Scrollable};
-use iced::{Align, Column, Container, Element, Length, Row, Space, Text};
+use iced::{Alignment, Column, Container, Element, Length, Row, Space, Text};
 
 #[derive(Debug)]
 pub struct State {
@@ -58,7 +58,7 @@ impl State {
                         .push(Text::new("\u{25a0}").size(18).color(th.error))
                         .push(Text::new(th.name.clone()).size(16))
                         .spacing(5)
-                        .align_items(Align::Center);
+                        .align_items(Alignment::Center);
 
                     if theme.name == th.name {
                         text = text

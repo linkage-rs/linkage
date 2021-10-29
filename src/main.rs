@@ -1,7 +1,5 @@
 use iced::executor;
-use iced::{
-    self, Application, Clipboard, Command, Container, Element, Length, Settings, Subscription,
-};
+use iced::{self, Application, Command, Container, Element, Length, Settings, Subscription};
 use iced_native;
 use iced_native::window;
 
@@ -71,7 +69,7 @@ impl Application for Linkage {
         String::from("Linkage")
     }
 
-    fn update(&mut self, message: Message, _clipboard: &mut Clipboard) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Event(event) => self.handle_event(event),
             Message::Saved => Command::none(),
@@ -149,7 +147,7 @@ impl Linkage {
                         return self.go_back();
                     }
                     #[cfg(target_os = "macos")]
-                    KeyCode::Q if modifiers.is_command_pressed() => {
+                    KeyCode::Q if modifiers.command() => {
                         return self.prepare_close();
                     }
                     _ => {}

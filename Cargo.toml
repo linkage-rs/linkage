@@ -2,7 +2,7 @@
 name = "linkage"
 version = "0.1.0"
 authors = ["Clark Moody <clark@clarkmoody.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 dirs-next = "2.0"
@@ -38,7 +38,7 @@ version = "0.2"
 version = "0.3"
 
 [patch.crates-io]
-iced = { git = "https://github.com/hecrj/iced.git", rev = "a6dbaf0f5fd3590a8cfe92f924184c5d78e00152"}
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "a6dbaf0f5fd3590a8cfe92f924184c5d78e00152"}
-iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "a6dbaf0f5fd3590a8cfe92f924184c5d78e00152"}
-iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "a6dbaf0f5fd3590a8cfe92f924184c5d78e00152"}
+iced = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
+iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
+iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
