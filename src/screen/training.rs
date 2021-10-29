@@ -3,12 +3,10 @@ use crate::data::training::{Difficulty, TriplePoint, CHARS_PER_LINE, MAX_ERRORS,
 use crate::data::Theme;
 use crate::font;
 use crate::style;
+use iced::alignment::{self, Alignment};
 use iced::button::{self, Button};
 use iced::keyboard::{self, KeyCode};
-use iced::{
-    Align, Column, Command, Container, Element, Length, Row, Space, Subscription, Text,
-    VerticalAlignment,
-};
+use iced::{Column, Command, Container, Element, Length, Row, Space, Subscription, Text};
 use itertools::{EitherOrBoth, Itertools};
 
 #[derive(Debug)]
@@ -120,7 +118,7 @@ impl State {
                 Text::new("\u{2015}")
                     .width(Length::Units(CHAR_WIDTH))
                     .height(Length::Units(LINE_SPACE))
-                    .vertical_alignment(VerticalAlignment::Center)
+                    .vertical_alignment(alignment::Vertical::Center)
                     .color(theme.target)
                     .into(),
             ])
@@ -181,7 +179,7 @@ impl State {
                                 .font(font::LIGHT)
                                 .size(16),
                         )
-                        .align_items(Align::Center)
+                        .align_items(Alignment::Center)
                         .spacing(5);
 
                     if let Some(stats) = stats {
@@ -211,7 +209,7 @@ impl State {
             .push(Text::new(profiles.active().name.clone()).size(14))
             .push(Text::new(profiles.active().layout.to_string()).size(14))
             .width(Length::Fill)
-            .align_items(Align::End)
+            .align_items(Alignment::End)
             .spacing(5);
 
         let settings_button = Button::new(&mut self.settings_button, settings_button_content)
@@ -256,7 +254,7 @@ impl State {
                 _ => None,
             },
             keyboard::Event::CharacterReceived(c)
-                if c.is_alphanumeric() && !self.modifiers.is_command_pressed() =>
+                if c.is_alphanumeric() && !self.modifiers.command() =>
             {
                 if let Some(line) = profiles.session_mut().apply_char(c) {
                     if let Some(words) = profiles.active_mut().add_line(line) {
