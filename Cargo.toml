@@ -38,7 +38,7 @@ version = "0.2"
 version = "0.3"
 
 [patch.crates-io]
-iced = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
-iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
-iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "8a2a7f7e2144542b47c1d259f296ad7dcc5f3cf9"}
+iced = { git = "https://github.com/hecrj/iced.git", rev = "4aa943cbc63230dfcb995c469ceec9f74e6132e1"}
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "4aa943cbc63230dfcb995c469ceec9f74e6132e1"}
+iced_graphics = { git = "https://github.com/hecrj/iced.git", rev = "4aa943cbc63230dfcb995c469ceec9f74e6132e1"}
+iced_futures = { git = "https://github.com/hecrj/iced.git", rev = "4aa943cbc63230dfcb995c469ceec9f74e6132e1"}
