@@ -53,9 +53,9 @@ impl Words {
         }
     }
 
-    pub fn line(&mut self, length: usize) -> String {
+    pub fn line(&mut self, length: usize, least_accurate: &CharSet) -> String {
         match self {
-            Words::Dictionary { char_limited, .. } => char_limited.line(length),
+            Words::Dictionary { char_limited, .. } => char_limited.line(length, least_accurate),
             Words::Random {
                 generator,
                 char_set,

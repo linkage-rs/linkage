@@ -125,6 +125,17 @@ impl State {
         self.char_set.clone()
     }
 
+    /// Get up to the `n` least accurate letters
+    fn least_accurate(&self, n: usize) -> CharSet {
+        self.clean
+            .iter()
+            .sorted_by_key(|(_, v)| (*v * 1000.0).round() as u16)
+            .map(|(ch, _)| ch)
+            .cloned()
+            .take(n)
+            .collect()
+    }
+
     /// Add a line of completed training. Optionally returns a new char set.
     pub fn add_line(
         &mut self,
@@ -274,14 +285,15 @@ impl Event {
 impl Session {
     pub fn new(setting: &words::Setting, state: &State) -> Self {
         let mut words = setting.get_words(state.char_set());
-        let line = words.line(CHARS_PER_LINE);
+        let least_accurate = state.least_accurate(1);
+        let line = words.line(CHARS_PER_LINE, &least_accurate);
 
         let mut targets: VecDeque<char> = line.chars().collect::<Vec<char>>().into();
         let first_letter = targets.pop_front().unwrap_or(' ');
 
         let mut next_lines = Vec::new();
         while next_lines.len() < NEXT_LINES {
-            next_lines.push(words.line(CHARS_PER_LINE));
+            next_lines.push(words.line(CHARS_PER_LINE, &least_accurate));
         }
 
         Self {
@@ -323,12 +335,14 @@ impl Session {
         None
     }
 
-    pub fn fill_next_lines(&mut self) {
+    pub fn fill_next_lines(&mut self, state: &State) {
+        let least_accurate = state.least_accurate(1);
         while self.next_lines.len() < NEXT_LINES + 1 {
             // TODO: Weighted character set selection:
             // - More words with characters that are our lower hit percentage
             // - Characters that are our slowest
-            self.next_lines.push(self.words.line(CHARS_PER_LINE));
+            self.next_lines
+                .push(self.words.line(CHARS_PER_LINE, &least_accurate));
         }
         for c in self.next_lines.remove(0).chars() {
             self.targets.push_back(c);

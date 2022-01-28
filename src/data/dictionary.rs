@@ -9,6 +9,7 @@ pub struct Dictionary {
     words: Vec<String>,
     dist: Uniform<usize>,
     rng: ThreadRng,
+    unit_dist: Uniform<f32>,
 }
 
 impl Dictionary {
@@ -19,11 +20,13 @@ impl Dictionary {
             .filter_map(|s| (!s.is_empty()).then(|| s.trim().to_string()))
             .collect();
         let dist = Uniform::new(0, words.len());
+        let unit_dist = Uniform::new_inclusive(0.0, 1.0);
 
         Dictionary {
             words,
             dist,
             rng: rand::thread_rng(),
+            unit_dist,
         }
     }
 
@@ -42,6 +45,7 @@ impl Dictionary {
             words,
             dist,
             rng: rand::thread_rng(),
+            unit_dist: self.unit_dist.clone(),
         }
     }
 
@@ -60,6 +64,7 @@ impl Dictionary {
                 words,
                 dist,
                 rng: rand::thread_rng(),
+                unit_dist: self.unit_dist.clone(),
             }
         })
     }
@@ -79,12 +84,13 @@ impl Dictionary {
                 words,
                 dist,
                 rng: rand::thread_rng(),
+                unit_dist: self.unit_dist.clone(),
             }
         })
     }
 
     /// Random line of words at most `length` characters long
-    pub fn line(&mut self, length: usize) -> String {
+    pub fn line(&mut self, length: usize, least_accurate: &CharSet) -> String {
         let mut best = String::new();
         let mut metric = i32::MAX;
 
@@ -93,6 +99,16 @@ impl Dictionary {
             let mut line_len = 0;
             while line_len <= length {
                 let word = self.sample();
+                let word_chars = word.chars().collect::<CharSet>();
+
+                // With a random probability, discard the word if it contains
+                // none of the lowest accuracy letters.
+                let contains_least_accurate =
+                    least_accurate.intersection(&word_chars).any(|_| true);
+                if !contains_least_accurate && self.unit_dist.sample(&mut self.rng) < 0.5 {
+                    continue;
+                }
+
                 line.push_str(&word);
                 line.push(' ');
 
