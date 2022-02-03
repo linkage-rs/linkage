@@ -90,7 +90,7 @@ impl Dictionary {
     }
 
     /// Random line of words at most `length` characters long
-    pub fn line(&mut self, length: usize, least_accurate: &CharSet) -> String {
+    pub fn line(&mut self, length: usize, needs_improvement: &CharSet) -> String {
         let mut best = String::new();
         let mut metric = i32::MAX;
 
@@ -103,9 +103,9 @@ impl Dictionary {
 
                 // With a random probability, discard the word if it contains
                 // none of the lowest accuracy letters.
-                let contains_least_accurate =
-                    least_accurate.intersection(&word_chars).any(|_| true);
-                if !contains_least_accurate && self.unit_dist.sample(&mut self.rng) < 0.5 {
+                let contains_needs_improvement =
+                    needs_improvement.intersection(&word_chars).any(|_| true);
+                if !contains_needs_improvement && self.unit_dist.sample(&mut self.rng) < 0.99 {
                     continue;
                 }
 

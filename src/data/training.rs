@@ -125,15 +125,42 @@ impl State {
         self.char_set.clone()
     }
 
-    /// Get up to the `n` least accurate letters
-    fn least_accurate(&self, n: usize) -> CharSet {
-        self.clean
+    /// Get up to the `n` letters that need improvement (accuracy then speed)
+    fn needs_improvement(&self, n: usize) -> CharSet {
+        let unclean: CharSet = self
+            .clean
             .iter()
+            .filter(|(_, &pct)| pct < MIN_CLEAN_PCT)
             .sorted_by_key(|(_, v)| (*v * 1000.0).round() as u16)
             .map(|(ch, _)| ch)
             .cloned()
             .take(n)
-            .collect()
+            .collect();
+
+        if unclean.len() < n {
+            unclean
+                .iter()
+                .chain(
+                    self.timings
+                        .iter()
+                        .sorted_by_key(
+                            |(
+                                _,
+                                Stats {
+                                    wpm_harmonic_mean, ..
+                                },
+                            )| {
+                                (wpm_harmonic_mean.0 * 1000.0).round() as u32
+                            },
+                        )
+                        .map(|(ch, _)| ch)
+                        .take(n.saturating_sub(unclean.len())),
+                )
+                .cloned()
+                .collect()
+        } else {
+            unclean
+        }
     }
 
     /// Add a line of completed training. Optionally returns a new char set.
@@ -285,7 +312,7 @@ impl Event {
 impl Session {
     pub fn new(setting: &words::Setting, state: &State) -> Self {
         let mut words = setting.get_words(state.char_set());
-        let least_accurate = state.least_accurate(1);
+        let least_accurate = state.needs_improvement(1);
         let line = words.line(CHARS_PER_LINE, &least_accurate);
 
         let mut targets: VecDeque<char> = line.chars().collect::<Vec<char>>().into();
@@ -336,7 +363,7 @@ impl Session {
     }
 
     pub fn fill_next_lines(&mut self, state: &State) {
-        let least_accurate = state.least_accurate(1);
+        let least_accurate = state.needs_improvement(1);
         while self.next_lines.len() < NEXT_LINES + 1 {
             // TODO: Weighted character set selection:
             // - More words with characters that are our lower hit percentage
