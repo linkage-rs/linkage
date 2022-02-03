@@ -71,44 +71,44 @@ impl Layout {
     pub fn letter_order(&self) -> Vec<char> {
         match self {
             Layout::Colemak => vec![
-                'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
-                'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
+                'n', 't', 'e', 's', 'i', 'r', 'o', 'a', 'l', 'p', 'u', 'f', 'y', 'w', 'm', 'v',
+                'c', 'h', 'd', 'j', 'g', 'k', 'b', 'x', 'q', 'z',
             ],
             Layout::ColemakDH => vec![
-                'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
-                'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
+                'n', 't', 'e', 's', 'i', 'r', 'o', 'a', 'l', 'p', 'u', 'f', 'y', 'w', 'h', 'd',
+                'c', 'm', 'g', 'j', 'b', 'k', 'v', 'x', 'q', 'z',
             ],
             Layout::ColemakDHOrtholinear => vec![
-                'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
-                'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
+                'n', 't', 'e', 's', 'i', 'r', 'o', 'a', 'l', 'p', 'u', 'f', 'y', 'w', 'h', 'd',
+                'c', 'm', 'g', 'j', 'b', 'k', 'v', 'x', 'q', 'z',
             ],
             Layout::ColemakOrtholinear => vec![
-                'n', 't', 'e', 's', 'i', 'r', 'l', 'p', 'h', 'd', 'a', 'o', 'u', 'f', 'm', 'g',
-                'y', 'c', 'j', 'v', 'b', 'k', 'w', 'x', 'q', 'z',
+                'n', 't', 'e', 's', 'i', 'r', 'o', 'a', 'l', 'p', 'u', 'f', 'y', 'w', 'm', 'v',
+                'c', 'h', 'd', 'j', 'g', 'k', 'b', 'x', 'q', 'z',
             ],
             Layout::Dvorak => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'h', 'u', 't', 'e', 'n', 'o', 'g', 'p', 's', 'a', 'c', 'd', 'i', 'r', 'l', 'm',
+                'k', 'f', 'y', 'w', 'j', 'b', 'v', 'q', 'x', 'z',
             ],
             Layout::DvorakOrtholinear => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'h', 'u', 't', 'e', 'n', 'o', 'g', 'p', 's', 'a', 'c', 'd', 'i', 'r', 'l', 'm',
+                'k', 'f', 'y', 'w', 'j', 'b', 'v', 'q', 'x', 'z',
             ],
             Layout::Qwerty => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'a', 's', 'd', 'f', 'e', 'j', 'k', 'i', 'l', 'u', 'r', 'o', 'w', 'm', 'v', 'c',
+                'h', 'g', 'y', 't', 'n', 'b', 'p', 'x', 'q', 'z',
             ],
             Layout::QwertyOrtholinear => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'a', 's', 'd', 'f', 'e', 'j', 'k', 'i', 'l', 'u', 'r', 'o', 'w', 'm', 'v', 'c',
+                'h', 'g', 'y', 't', 'n', 'b', 'p', 'x', 'q', 'z',
             ],
             Layout::Workman => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'n', 't', 'e', 'h', 'o', 's', 'i', 'a', 'f', 'w', 'u', 'r', 'p', 'd', 'l', 'c',
+                'm', 'y', 'g', 'j', 'b', 'k', 'v', 'x', 'q', 'z',
             ],
             Layout::WorkmanOrtholinear => vec![
-                'f', 'd', 'e', 'a', 'k', 'l', 's', 'u', 'j', 'i', 'r', 'o', 't', 'm', 'c', 'y',
-                'g', 'h', 'v', 'n', 'b', 'w', 'p', 'q', 'x', 'z',
+                'n', 't', 'e', 'h', 'o', 's', 'i', 'a', 'f', 'w', 'u', 'r', 'p', 'd', 'l', 'c',
+                'm', 'y', 'g', 'j', 'b', 'k', 'v', 'x', 'q', 'z',
             ],
         }
     }
