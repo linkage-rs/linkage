@@ -14,7 +14,7 @@ pub struct Theme {
 
 impl Theme {
     pub fn all() -> Vec<Self> {
-        vec![Self::ayu(), Self::monokai()]
+        vec![Self::ayu(), Self::monokai(), Self::tokyo_night(), Self::one_dark()]
     }
 
     pub fn from_name(name: &str) -> Option<Self> {
@@ -42,6 +42,30 @@ impl Theme {
             hit: Color::from_rgba8(0x4D, 0x55, 0x66, 1.0),
             miss: Color::from_rgba8(0xFF, 0xB4, 0x54, 1.0),
             error: Color::from_rgba8(0xF0, 0x71, 0x78, 1.0),
+        }
+    }
+
+    pub fn tokyo_night() -> Self {
+        Self {
+            name: "Tokyo Night".to_string(),
+            bg: Color::from_rgba8(0x1A, 0x1B, 0x26, 1.0),
+            text: Color::from_rgba8(0xC0, 0xCA, 0xF5, 1.0),
+            target: Color::from_rgba8(0x9E, 0xCE, 0x6A, 1.0),
+            hit: Color::from_rgba8(0x56, 0x5F, 0x89, 1.0),
+            miss: Color::from_rgba8(0xFF, 0x9E, 0x64, 1.0),
+            error: Color::from_rgba8(0xF7, 0x76, 0x8E, 1.0),
+        }
+    }
+
+    pub fn one_dark() -> Self {
+        Self {
+            name: "One Dark".to_string(),
+            bg: Color::from_rgba8(0x28, 0x2C, 0x34, 1.0),
+            text: Color::from_rgba8(0xAB, 0xB2, 0xBF, 1.0),
+            target: Color::from_rgba8(0x98, 0xC3, 0x79, 1.0),
+            hit: Color::from_rgba8(0x5C, 0x63, 0x70, 1.0),
+            miss: Color::from_rgba8(0xD1, 0x9A, 0x66, 1.0),
+            error: Color::from_rgba8(0xBE, 0x50, 0x46, 1.0),
         }
     }
 
