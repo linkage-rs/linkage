@@ -3,7 +3,7 @@ use palette::{Mix, Srgb};
 
 #[derive(Debug, Clone)]
 pub struct Theme {
-    pub name: String,
+    pub name: &'static str,
     pub bg: Color,
     pub text: Color,
     pub target: Color,
@@ -14,7 +14,12 @@ pub struct Theme {
 
 impl Theme {
     pub fn all() -> Vec<Self> {
-        vec![Self::ayu(), Self::monokai(), Self::tokyo_night(), Self::one_dark()]
+        vec![
+            Self::ayu(),
+            Self::monokai(),
+            Self::tokyo_night(),
+            Self::one_dark(),
+        ]
     }
 
     pub fn from_name(name: &str) -> Option<Self> {
@@ -23,7 +28,7 @@ impl Theme {
 
     pub fn monokai() -> Self {
         Self {
-            name: "Monokai".to_string(),
+            name: "Monokai",
             bg: Color::from_rgba8(0x27, 0x28, 0x22, 1.0),
             text: Color::from_rgba8(0xf8, 0xf8, 0xf2, 1.0),
             target: Color::from_rgba8(0xa6, 0xe2, 0x2e, 1.0),
@@ -35,7 +40,7 @@ impl Theme {
 
     pub fn ayu() -> Self {
         Self {
-            name: "Ayu".to_string(),
+            name: "Ayu",
             bg: Color::from_rgba8(0x0A, 0x0E, 0x14, 1.0),
             text: Color::from_rgba8(0xB3, 0xB1, 0xAD, 1.0),
             target: Color::from_rgba8(0xc2, 0xd9, 0x4c, 1.0),
@@ -47,7 +52,7 @@ impl Theme {
 
     pub fn tokyo_night() -> Self {
         Self {
-            name: "Tokyo Night".to_string(),
+            name: "Tokyo Night",
             bg: Color::from_rgba8(0x1A, 0x1B, 0x26, 1.0),
             text: Color::from_rgba8(0xC0, 0xCA, 0xF5, 1.0),
             target: Color::from_rgba8(0x9E, 0xCE, 0x6A, 1.0),
@@ -59,7 +64,7 @@ impl Theme {
 
     pub fn one_dark() -> Self {
         Self {
-            name: "One Dark".to_string(),
+            name: "One Dark",
             bg: Color::from_rgba8(0x28, 0x2C, 0x34, 1.0),
             text: Color::from_rgba8(0xAB, 0xB2, 0xBF, 1.0),
             target: Color::from_rgba8(0x98, 0xC3, 0x79, 1.0),
@@ -77,13 +82,17 @@ impl Theme {
         if value < 0.5 {
             let pct = value / 0.5;
             let error = Srgb::from(self.error).into_linear();
-            return Srgb::from_linear(error.mix(&text, pct)).into();
+            Srgb::from_linear(error.mix(&text, pct)).into()
         } else {
             let pct = (value - 0.5) / 0.5;
             let target = Srgb::from(self.target).into_linear();
-            return Srgb::from_linear(text.mix(&target, pct)).into();
+            Srgb::from_linear(text.mix(&target, pct)).into()
         }
     }
+}
+
+pub fn alpha(color: Color, alpha: f32) -> Color {
+    Color { a: alpha, ..color }
 }
 
 impl Default for Theme {

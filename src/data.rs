@@ -26,11 +26,11 @@ pub struct Saved {
 }
 
 impl Saved {
-    pub fn new(profiles: profile::List, theme: &Theme) -> Self {
+    pub fn new(profiles: profile::List, theme_name: &str) -> Self {
         Self {
             version: VERSION,
             profiles: profiles.into(),
-            theme_name: theme.name.clone(),
+            theme_name: theme_name.to_string(),
         }
     }
 

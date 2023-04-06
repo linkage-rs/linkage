@@ -1,53 +1,37 @@
 use crate::data::keyboard::{self, Layout};
+use crate::data::profile;
 use crate::data::training::Difficulty;
-use crate::data::{self, Theme};
 use crate::font;
 use crate::style;
-use iced::button::{self, Button};
-use iced::pick_list::{self, PickList};
-use iced::scrollable::{self, Scrollable};
-use iced::text_input::{self, TextInput};
-use iced::{Column, Container, Element, Length, Row, Rule, Text};
+use crate::Element;
+
+use iced::widget::{
+    container, Button, Column, Container, PickList, Row, Rule, Scrollable, Text, TextInput,
+};
+use iced::Length;
 
 #[derive(Debug)]
 pub struct State {
     menu: Menu,
-    content_scroll: scrollable::State,
     screen: Screen,
 }
 
 #[derive(Debug)]
-pub struct Menu {
-    buttons: Vec<button::State>,
-    new_button: button::State,
-    scroll: scrollable::State,
-}
+pub struct Menu {}
 
 #[derive(Debug)]
 pub enum Screen {
     Create {
-        accept: button::State,
-        cancel: button::State,
         difficulty: Option<Difficulty>,
-        difficulty_pick_list: pick_list::State<Difficulty>,
         layout: Option<Layout>,
-        layout_pick_list: pick_list::State<Layout>,
-        name_input: text_input::State,
-        name_parsed: Option<data::profile::Name>,
+        name_parsed: Option<profile::Name>,
         name_value: String,
     },
     Rename {
-        accept: button::State,
-        cancel: button::State,
-        name_input: text_input::State,
-        name_parsed: Option<data::profile::Name>,
+        name_parsed: Option<profile::Name>,
         name_value: String,
     },
-    View {
-        difficulty_pick_list: pick_list::State<Difficulty>,
-        rename_button: button::State,
-        // delete_button
-    },
+    View,
 }
 
 #[derive(Debug, Clone)]
@@ -68,12 +52,11 @@ impl State {
     pub fn new() -> Self {
         Self {
             menu: Menu::new(),
-            content_scroll: scrollable::State::new(),
             screen: Screen::viewing(),
         }
     }
 
-    pub fn update(&mut self, profiles: &mut data::profile::List, message: Message) -> bool {
+    pub fn update(&mut self, profiles: &mut profile::List, message: Message) -> bool {
         match message {
             Message::CreateAccept => {
                 if let Screen::Create {
@@ -83,8 +66,7 @@ impl State {
                     ..
                 } = &self.screen
                 {
-                    let profile =
-                        data::profile::Profile::new(name_parsed.clone(), *layout, *difficulty);
+                    let profile = profile::Profile::new(name_parsed.clone(), *layout, *difficulty);
                     profiles.insert_active(profile);
 
                     self.screen = Screen::viewing();
@@ -125,7 +107,7 @@ impl State {
                     ..
                 } => {
                     *name_parsed = None;
-                    if let Some(name) = data::profile::Name::parse(&new_name) {
+                    if let Some(name) = profile::Name::parse(&new_name) {
                         if !profiles.contains_name(&name) {
                             *name_parsed = Some(name);
                         }
@@ -164,24 +146,21 @@ impl State {
         false
     }
 
-    pub fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
-        let State {
-            menu,
-            content_scroll,
-            screen,
-        } = self;
+    pub fn view(&self, profiles: &profile::List) -> Element<Message> {
+        let State { menu, screen } = self;
 
-        let menu = menu.view(profiles, theme);
+        let menu = menu.view(profiles);
 
-        let content = Scrollable::new(content_scroll)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .padding(10)
-            .push(screen.view(profiles, theme));
+        let content = Scrollable::new(
+            container(screen.view(profiles))
+                .width(Length::Fill)
+                .padding(10),
+        )
+        .height(Length::Fill);
 
         Row::new()
             .push(menu)
-            .push(Rule::vertical(0).style(style::rule::divider(theme)))
+            .push(Rule::vertical(0).style(style::Rule::Divider))
             .push(content)
             .height(Length::Fill)
             .width(Length::Fill)
@@ -191,40 +170,29 @@ impl State {
 
 impl Menu {
     fn new() -> Self {
-        Self {
-            buttons: Vec::new(),
-            new_button: button::State::new(),
-            scroll: scrollable::State::new(),
-        }
+        Self {}
     }
 
-    fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
-        let Menu {
-            buttons,
-            new_button,
-            scroll,
-        } = self;
-
-        buttons.resize(profiles.len(), button::State::new());
-
+    fn view(&self, profiles: &profile::List) -> Element<Message> {
         let menu = Column::with_children(
             profiles
                 .names()
-                .zip(buttons.iter_mut())
                 .enumerate()
-                .map(|(i, ((name, is_active), state))| {
-                    let text = Container::new(Text::new(name).size(14))
+                .map(|(i, (name, is_active))| {
+                    let text = Container::new(Text::new(name.to_string()).size(14))
                         .padding(6)
                         .center_x()
                         .center_y();
                     if is_active {
                         Container::new(text)
-                            .style(style::container::menu_selected(theme))
+                            .style(style::Container::MenuSelected)
                             .width(Length::Fill)
                             .into()
                     } else {
-                        Button::new(state, text)
-                            .style(style::button::menu(theme, is_active))
+                        Button::new(text)
+                            .style(style::Button::Menu {
+                                selected: is_active,
+                            })
                             .on_press(Message::ProfilePressed(i))
                             .width(Length::Fill)
                             .padding(0)
@@ -235,16 +203,13 @@ impl Menu {
         )
         .width(Length::Fill);
 
-        let new_button = Button::new(new_button, Text::new("+ New Profile").size(14))
-            .style(style::button::menu(theme, false))
+        let new_button = Button::new(Text::new("+ New Profile").size(14))
+            .style(style::Button::Menu { selected: false })
             .on_press(Message::NewProfilePressed)
             .width(Length::Fill);
 
-        Scrollable::new(scroll)
-            .push(menu)
-            .push(new_button)
+        Scrollable::new(Column::new().push(menu).push(new_button).width(175))
             .height(Length::Fill)
-            .width(Length::Units(175))
             .into()
     }
 }
@@ -252,13 +217,10 @@ impl Menu {
 impl Screen {
     fn creating() -> Self {
         Self::Create {
-            accept: button::State::new(),
-            cancel: button::State::new(),
             difficulty: Some(Difficulty::default()),
-            difficulty_pick_list: pick_list::State::default(),
+
             layout: None,
-            layout_pick_list: pick_list::State::default(),
-            name_input: text_input::State::new(),
+
             name_parsed: None,
             name_value: String::new(),
         }
@@ -266,79 +228,55 @@ impl Screen {
 
     fn renaming(name_value: String) -> Self {
         Self::Rename {
-            accept: button::State::new(),
-            cancel: button::State::new(),
-            name_input: text_input::State::new(),
             name_parsed: None,
             name_value,
         }
     }
 
     fn viewing() -> Self {
-        Self::View {
-            difficulty_pick_list: pick_list::State::default(),
-            rename_button: button::State::new(),
-        }
+        Self::View
     }
 
-    fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
+    fn view(&self, profiles: &profile::List) -> Element<Message> {
         let mut content = Column::new().width(Length::Fill).spacing(20);
 
         match self {
             Screen::Create {
-                accept,
-                cancel,
                 difficulty,
-                difficulty_pick_list,
                 layout,
-                layout_pick_list,
-                name_input,
                 name_parsed,
                 name_value,
             } => {
-                let name_input =
-                    TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
-                        .style(style::text_input::themed(theme))
-                        .width(Length::Fill)
-                        .padding(6)
-                        .size(18);
+                let name_input = TextInput::new("Profile Name", name_value, Message::NameInput)
+                    .width(Length::Fill)
+                    .padding(6)
+                    .size(18);
 
-                let layout_title = Text::new("Keyboard Layout").size(14).font(font::THIN);
-                let layout_pick_list = PickList::new(
-                    layout_pick_list,
-                    keyboard::ALL,
-                    *layout,
-                    Message::LayoutChanged,
-                )
-                .text_size(15)
-                .style(style::pick_list::themed(theme));
+                let layout_title = Text::new("Keyboard Layout").size(14).font(font::Font::Thin);
+                let layout_pick_list =
+                    PickList::new(keyboard::ALL, *layout, Message::LayoutChanged).text_size(15);
                 let layout_section = Column::new()
                     .spacing(5)
                     .push(layout_title)
                     .push(layout_pick_list);
 
-                let difficulty_title = Text::new("Difficulty").size(14).font(font::THIN);
-                let difficulty_pick_list = PickList::new(
-                    difficulty_pick_list,
-                    Difficulty::ALL,
-                    *difficulty,
-                    Message::DifficultyChanged,
-                )
-                .text_size(15)
-                .style(style::pick_list::themed(theme));
+                let difficulty_title = Text::new("Difficulty").size(14).font(font::Font::Thin);
+                let difficulty_pick_list =
+                    PickList::new(Difficulty::ALL, *difficulty, Message::DifficultyChanged)
+                        .text_size(15);
                 let difficulty_section = Column::new()
                     .spacing(5)
                     .push(difficulty_title)
                     .push(difficulty_pick_list);
 
-                let mut accept = Button::new(accept, centered_text("\u{2714}", 20, 20))
-                    .style(style::button::accept(theme));
+                let mut accept =
+                    Button::new(centered_text("\u{2714}", 24, 20)).style(style::Button::Accept);
                 if name_parsed.is_some() && layout.is_some() {
                     accept = accept.on_press(Message::CreateAccept);
                 }
 
-                let cancel = Button::new(cancel, centered_text("\u{2716}", 20, 20))
-                    .style(style::button::reject(theme))
+                let cancel = Button::new(centered_text("\u{2716}", 24, 20))
+                    .style(style::Button::Reject)
                     .on_press(Message::CreateCancel);
 
                 let button_row = Row::new().push(accept).push(cancel).spacing(5);
@@ -350,29 +288,24 @@ impl Screen {
                     .push(button_row);
             }
             Screen::Rename {
-                accept,
-                cancel,
-                name_input,
                 name_parsed,
                 name_value,
             } => {
-                let mut name_input =
-                    TextInput::new(name_input, "Profile Name", name_value, Message::NameInput)
-                        .style(style::text_input::themed(theme))
-                        .width(Length::Fill)
-                        .padding(6)
-                        .size(18);
+                let mut name_input = TextInput::new("Profile Name", name_value, Message::NameInput)
+                    .width(Length::Fill)
+                    .padding(6)
+                    .size(18);
 
-                let mut accept = Button::new(accept, centered_text("\u{2714}", 20, 20))
-                    .style(style::button::accept(theme));
+                let mut accept =
+                    Button::new(centered_text("\u{2714}", 24, 20)).style(style::Button::Accept);
 
                 if name_parsed.is_some() {
                     name_input = name_input.on_submit(Message::RenameAccept);
                     accept = accept.on_press(Message::RenameAccept);
                 }
 
-                let cancel = Button::new(cancel, centered_text("\u{2716}", 20, 20))
-                    .style(style::button::reject(theme))
+                let cancel = Button::new(centered_text("\u{2716}", 24, 20))
+                    .style(style::Button::Reject)
                     .on_press(Message::RenameCancel);
 
                 let name_row = Row::new()
@@ -383,19 +316,14 @@ impl Screen {
 
                 content = content.push(name_row);
             }
-            Screen::View {
-                difficulty_pick_list,
-                rename_button,
-            } => {
-                let rename_button = Button::new(
-                    rename_button,
-                    Text::new(profiles.active().name.to_string()).size(18),
-                )
-                .style(style::button::text(theme))
-                .on_press(Message::RenamePressed)
-                .padding(6);
+            Screen::View => {
+                let rename_button =
+                    Button::new(Text::new(profiles.active().name.to_string()).size(18))
+                        .style(style::Button::Text)
+                        .on_press(Message::RenamePressed)
+                        .padding(6);
 
-                let layout_title = Text::new("Keyboard Layout").size(14).font(font::THIN);
+                let layout_title = Text::new("Keyboard Layout").size(14).font(font::Font::Thin);
                 let layout_name = Text::new(profiles.active().layout.to_string()).size(16);
                 let layout_section = Column::new()
                     .padding([0, 0, 0, 6])
@@ -403,16 +331,15 @@ impl Screen {
                     .push(layout_title)
                     .push(layout_name);
 
-                let difficulty_title = Text::new("Difficulty").size(14).font(font::THIN);
+                let difficulty_title = Text::new("Difficulty").size(14).font(font::Font::Thin);
                 let difficulty_pick_list = PickList::new(
-                    difficulty_pick_list,
                     Difficulty::ALL,
                     Some(profiles.active().difficulty),
                     Message::DifficultyChanged,
                 )
-                .text_size(15)
-                .style(style::pick_list::themed(theme));
+                .text_size(15);
                 let difficulty_section = Column::new()
+                    .padding([0, 0, 0, 6])
                     .spacing(5)
                     .push(difficulty_title)
                     .push(difficulty_pick_list);
@@ -428,10 +355,11 @@ impl Screen {
     }
 }
 
-fn centered_text(s: &str, size: u16, side: u16) -> Container<Message> {
+fn centered_text(s: &str, size: u16, side: u16) -> Element<Message> {
     Container::new(Text::new(s).size(size))
-        .width(Length::Units(side))
-        .height(Length::Units(side))
+        .width(side)
+        .height(side)
         .center_x()
         .center_y()
+        .into()
 }

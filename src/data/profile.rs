@@ -98,6 +98,10 @@ impl List {
         self.zipper.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.zipper.is_empty()
+    }
+
     fn iter(&self) -> impl Iterator<Item = Item<&Profile, &Active>> {
         self.zipper.iter()
     }
@@ -158,7 +162,7 @@ impl From<Active> for Profile {
             layout: active.layout,
             difficulty: active.difficulty,
             state: active.state,
-            words: active.session.words_setting().clone(),
+            words: active.session.words_setting(),
         }
     }
 }

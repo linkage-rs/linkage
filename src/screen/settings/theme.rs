@@ -1,14 +1,13 @@
 use crate::data::Theme;
-use crate::style;
-use iced::button::{self, Button};
-use iced::scrollable::{self, Scrollable};
-use iced::{Alignment, Column, Container, Element, Length, Row, Space, Text};
+use crate::{style, Element};
+
+use iced::widget::{Button, Column, Container, Row, Scrollable, Space, Text};
+use iced::{Alignment, Length};
 
 #[derive(Debug)]
 pub struct State {
-    buttons: Vec<button::State>,
-    scroll: scrollable::State,
     themes: Vec<Theme>,
+    active: &'static str,
 }
 
 #[derive(Debug, Clone)]
@@ -21,21 +20,17 @@ pub enum Event {
 }
 
 impl State {
-    pub fn new() -> Self {
+    pub fn new(active: &'static str) -> Self {
         let themes = Theme::all();
-        let buttons = vec![button::State::new(); themes.len()];
 
-        Self {
-            buttons,
-            scroll: scrollable::State::new(),
-            themes,
-        }
+        Self { themes, active }
     }
 
     pub fn update(&mut self, message: Message) -> Option<Event> {
         match message {
             Message::ThemePressed(index) => {
                 if let Some(theme) = self.themes.get(index) {
+                    self.active = theme.name;
                     return Some(Event::SelectTheme(theme.clone()));
                 }
             }
@@ -43,53 +38,70 @@ impl State {
         None
     }
 
-    pub fn view(&mut self, theme: &Theme) -> Element<Message> {
+    pub fn view(&self) -> Element<Message> {
         let title = Container::new(Text::new("Theme").size(18)).padding(6);
 
         let buttons = Column::with_children(
             self.themes
                 .iter()
                 .enumerate()
-                .zip(self.buttons.iter_mut())
-                .map(|((i, th), state)| {
-                    let mut text = Row::new()
-                        .push(Text::new("\u{25a0}").size(18).color(th.target))
-                        .push(Text::new("\u{25a0}").size(18).color(th.miss))
-                        .push(Text::new("\u{25a0}").size(18).color(th.error))
-                        .push(Text::new(th.name.clone()).size(16))
+                .map(|(i, th)| {
+                    let mut content = Row::new()
+                        .push(
+                            Text::new("\u{25a0}")
+                                .size(18)
+                                .style(style::Text::Override(th.target)),
+                        )
+                        .push(
+                            Text::new("\u{25a0}")
+                                .size(18)
+                                .style(style::Text::Override(th.miss)),
+                        )
+                        .push(
+                            Text::new("\u{25a0}")
+                                .size(18)
+                                .style(style::Text::Override(th.error)),
+                        )
+                        .push(
+                            Text::new(th.name)
+                                .size(16)
+                                .style(style::Text::Override(th.text)),
+                        )
                         .spacing(5)
                         .align_items(Alignment::Center);
 
-                    if theme.name == th.name {
-                        text = text
+                    if self.active == th.name {
+                        content = content
                             .push(Space::with_width(Length::Fill))
-                            .push(Text::new("\u{25cf}").size(18).color(th.text));
+                            .push(Text::new("\u{25cf}").size(18));
                     }
 
                     Container::new(
-                        Button::new(state, text)
+                        Button::new(content)
                             .on_press(Message::ThemePressed(i))
-                            .style(style::button::basic(th))
+                            .style(style::Button::ThemePreview(th.clone()))
                             .width(Length::Fill)
                             .padding([3, 7, 3, 7]),
                     )
-                    .style(style::container::primary(th))
+                    .style(style::Container::theme_preview(th))
                     .width(Length::Fill)
                     .into()
                 })
                 .collect(),
         )
-        .width(Length::Units(175))
+        .width(225)
         .spacing(7)
         .padding([0, 0, 0, 6]);
 
-        Scrollable::new(&mut self.scroll)
-            .push(title)
-            .push(buttons)
-            .height(Length::Fill)
-            .width(Length::Fill)
-            .spacing(20)
-            .padding(10)
-            .into()
+        Scrollable::new(
+            Column::new()
+                .push(title)
+                .push(buttons)
+                .width(Length::Fill)
+                .spacing(20)
+                .padding(10),
+        )
+        .height(Length::Fill)
+        .into()
     }
 }

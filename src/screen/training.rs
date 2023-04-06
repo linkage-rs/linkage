@@ -1,18 +1,18 @@
 use crate::data::profile;
 use crate::data::training::{Difficulty, TriplePoint, CHARS_PER_LINE, MAX_ERRORS, MIN_CLEAN_PCT};
-use crate::data::Theme;
 use crate::font;
 use crate::style;
+use crate::Element;
+
 use iced::alignment::{self, Alignment};
-use iced::button::{self, Button};
 use iced::keyboard::{self, KeyCode};
-use iced::{Column, Command, Container, Element, Length, Row, Space, Subscription, Text};
+use iced::widget::{Button, Column, Container, Row, Space, Text};
+use iced::{Command, Length, Subscription};
 use itertools::{EitherOrBoth, Itertools};
 
 #[derive(Debug)]
 pub struct State {
     modifiers: keyboard::Modifiers,
-    settings_button: button::State,
     accuracy_metric: TriplePoint,
     wpm_metric: TriplePoint,
 }
@@ -42,7 +42,6 @@ impl State {
     pub fn new(difficulty: &Difficulty) -> Self {
         Self {
             modifiers: keyboard::Modifiers::default(),
-            settings_button: button::State::new(),
             accuracy_metric: TriplePoint::new(0.5, MIN_CLEAN_PCT, 0.975).unwrap_or_default(),
             wpm_metric: TriplePoint::new(
                 10.0,
@@ -67,7 +66,7 @@ impl State {
         }
     }
 
-    pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {
+    pub fn view(&self, profiles: &profile::List) -> Element<Message> {
         let active_line = Row::with_children(
             profiles
                 .session()
@@ -75,12 +74,12 @@ impl State {
                 .iter()
                 .map(|hit| {
                     Text::new(hit.target().to_string())
-                        .width(Length::Units(CHAR_WIDTH))
-                        .font(font::THIN)
-                        .color(if hit.is_dirty() {
-                            theme.miss
+                        .width(CHAR_WIDTH)
+                        .font(font::Font::Thin)
+                        .style(if hit.is_dirty() {
+                            style::Text::Miss
                         } else {
-                            theme.text
+                            style::Text::Default
                         })
                 })
                 .chain(
@@ -96,13 +95,11 @@ impl State {
                             EitherOrBoth::Left(e) | EitherOrBoth::Both(e, _) => {
                                 let c = if *e == ' ' { '\u{2591}' } else { *e };
                                 Text::new(c.to_string())
-                                    .width(Length::Units(CHAR_WIDTH))
-                                    .font(font::MEDIUM)
-                                    .color(theme.error)
+                                    .width(CHAR_WIDTH)
+                                    .font(font::Font::Medium)
+                                    .style(style::Text::Error)
                             }
-                            EitherOrBoth::Right(t) => {
-                                Text::new(t.to_string()).width(Length::Units(CHAR_WIDTH))
-                            }
+                            EitherOrBoth::Right(t) => Text::new(t.to_string()).width(CHAR_WIDTH),
                         }),
                 )
                 .map(|text| text.into())
@@ -111,24 +108,21 @@ impl State {
 
         let target_indicator: Element<_> = if profiles.session().errors.is_empty() {
             Row::with_children(vec![
-                Space::with_width(Length::Units(
-                    profiles.session().hits.len() as u16 * CHAR_WIDTH,
-                ))
-                .into(),
+                Space::with_width(profiles.session().hits.len() as u16 * CHAR_WIDTH).into(),
                 Text::new("\u{2015}")
-                    .width(Length::Units(CHAR_WIDTH))
-                    .height(Length::Units(LINE_SPACE))
+                    .width(CHAR_WIDTH)
+                    .height(LINE_SPACE)
                     .vertical_alignment(alignment::Vertical::Center)
-                    .color(theme.target)
+                    .style(style::Text::Target)
                     .into(),
             ])
             .into()
         } else {
-            Space::with_height(Length::Units(LINE_SPACE)).into()
+            Space::with_height(LINE_SPACE).into()
         };
 
         let content_active = Column::new()
-            .width(Length::Units(ROW_WIDTH))
+            .width(ROW_WIDTH)
             .push(active_line)
             .push(target_indicator);
 
@@ -140,11 +134,7 @@ impl State {
                 .map(|line| {
                     Row::with_children(
                         line.chars()
-                            .map(|c| {
-                                Text::new(c.to_string())
-                                    .width(Length::Units(CHAR_WIDTH))
-                                    .into()
-                            })
+                            .map(|c| Text::new(c.to_string()).width(CHAR_WIDTH).into())
                             .collect(),
                     )
                     .into()
@@ -152,7 +142,7 @@ impl State {
                 .collect(),
         )
         .spacing(LINE_SPACE)
-        .width(Length::Units(ROW_WIDTH));
+        .width(ROW_WIDTH);
 
         let training = Column::with_children(vec![content_active.into(), content_next.into()])
             .padding([0, STATS_WIDTH.saturating_sub(ROW_ERROR_WIDTH), 0, 0]);
@@ -172,11 +162,11 @@ impl State {
                 .map(|(ch, val)| {
                     let stats = profiles.active().state.timings.get(ch);
                     let mut row = Row::new()
-                        .push(Text::new(ch.to_string()).font(font::LIGHT).size(12))
+                        .push(Text::new(ch.to_string()).font(font::Font::Light).size(12))
                         .push(
                             Text::new("\u{25a0}")
-                                .color(theme.metric(self.accuracy_metric.value(*val)))
-                                .font(font::LIGHT)
+                                .style(style::Text::Metric(self.accuracy_metric.value(*val)))
+                                .font(font::Font::Light)
                                 .size(16),
                         )
                         .align_items(Alignment::Center)
@@ -186,8 +176,8 @@ impl State {
                         let wpm = f64::from(stats.wpm_harmonic_mean) as f32;
                         row = row.push(
                             Text::new("\u{25a0}")
-                                .color(theme.metric(self.wpm_metric.value(wpm)))
-                                .font(font::LIGHT)
+                                .style(style::Text::Metric(self.wpm_metric.value(wpm)))
+                                .font(font::Font::Light)
                                 .size(16),
                         )
                     }
@@ -195,7 +185,7 @@ impl State {
                 })
                 .collect(),
         )
-        .width(Length::Units(STATS_WIDTH))
+        .width(STATS_WIDTH)
         .spacing(2)
         .padding(5);
 
@@ -206,15 +196,15 @@ impl State {
             .height(Length::Fill);
 
         let settings_button_content = Column::new()
-            .push(Text::new(profiles.active().name.clone()).size(14))
+            .push(Text::new(profiles.active().name.to_string()).size(14))
             .push(Text::new(profiles.active().layout.to_string()).size(14))
             .width(Length::Fill)
             .align_items(Alignment::End)
             .spacing(5);
 
-        let settings_button = Button::new(&mut self.settings_button, settings_button_content)
+        let settings_button = Button::new(settings_button_content)
             .on_press(Message::UserButtonPressed)
-            .style(style::button::text(theme))
+            .style(style::Button::Text)
             .padding(10);
 
         let footer = Row::new()
@@ -273,10 +263,10 @@ impl State {
 }
 
 pub fn subscription() -> Subscription<Message> {
-    use iced_native::event::{Event, Status};
-    use iced_native::window::Event as WindowEvent;
+    use iced::event::{Event, Status};
+    use iced::window::Event as WindowEvent;
 
-    iced_native::subscription::events_with(|event, status| {
+    iced::subscription::events_with(|event, status| {
         if status == Status::Captured {
             return None;
         }

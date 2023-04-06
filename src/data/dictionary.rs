@@ -45,7 +45,7 @@ impl Dictionary {
             words,
             dist,
             rng: rand::thread_rng(),
-            unit_dist: self.unit_dist.clone(),
+            unit_dist: self.unit_dist,
         }
     }
 
@@ -64,7 +64,7 @@ impl Dictionary {
                 words,
                 dist,
                 rng: rand::thread_rng(),
-                unit_dist: self.unit_dist.clone(),
+                unit_dist: self.unit_dist,
             }
         })
     }
@@ -84,7 +84,7 @@ impl Dictionary {
                 words,
                 dist,
                 rng: rand::thread_rng(),
-                unit_dist: self.unit_dist.clone(),
+                unit_dist: self.unit_dist,
             }
         })
     }

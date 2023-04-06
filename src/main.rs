@@ -1,26 +1,15 @@
 use iced::executor;
-use iced::{self, Application, Command, Container, Element, Length, Settings, Subscription};
-use iced_native;
-use iced_native::window;
+use iced::widget::Container;
+use iced::window;
+use iced::{self, Application, Command, Element, Length, Settings, Subscription};
 
-mod data;
-mod font;
-mod screen;
-mod style;
-
-use data::profile;
-use data::Theme;
-use screen::Screen;
+use linkage::data::{self, profile};
+use linkage::screen::{self, Screen};
+use linkage::{font, style};
 
 pub fn main() -> iced::Result {
-    let default_font = if let iced::Font::External { bytes, .. } = font::LIGHT {
-        Some(bytes)
-    } else {
-        None
-    };
-
     Linkage::run(Settings {
-        default_font,
+        default_font: font::Font::Light.into(),
         exit_on_close_request: false,
         window: iced::window::Settings {
             min_size: Some((screen::training::OVERALL_WIDTH as u32, 256)),
@@ -32,15 +21,16 @@ pub fn main() -> iced::Result {
 
 #[derive(Debug)]
 struct Linkage {
-    should_exit: bool,
     screen: Screen,
-    theme: Theme,
+    theme: style::Theme,
     profiles: profile::List,
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
 enum Message {
-    Event(iced_native::Event),
+    Event(iced::Event),
+    FontLoaded(Result<(), iced::font::Error>),
     Saved,
     Screen(screen::Message),
 }
@@ -48,20 +38,25 @@ enum Message {
 impl Application for Linkage {
     type Executor = executor::Default;
     type Message = Message;
+    type Theme = style::Theme;
     type Flags = ();
 
     fn new(_: ()) -> (Linkage, Command<Message>) {
         let linkage = Linkage {
-            should_exit: false,
             screen: Screen::new(),
-            theme: Theme::monokai(),
+            theme: Default::default(),
             profiles: profile::List::default(),
         };
         (
             linkage,
-            Command::perform(screen::loading::load(), |message| {
-                Message::Screen(screen::Message::Loading(message))
-            }),
+            Command::batch(vec![
+                iced::font::load(font::THIN).map(Message::FontLoaded),
+                iced::font::load(font::LIGHT).map(Message::FontLoaded),
+                iced::font::load(font::MEDIUM).map(Message::FontLoaded),
+                Command::perform(screen::loading::load(), |message| {
+                    Message::Screen(screen::Message::Loading(message))
+                }),
+            ]),
         )
     }
 
@@ -72,6 +67,11 @@ impl Application for Linkage {
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Event(event) => self.handle_event(event),
+            Message::FontLoaded(Ok(_)) => Command::none(),
+            Message::FontLoaded(Err(_)) => {
+                eprintln!("Could not load font.");
+                Command::none()
+            }
             Message::Saved => Command::none(),
             Message::Screen(message) => {
                 let Linkage {
@@ -80,15 +80,12 @@ impl Application for Linkage {
                     profiles,
                     ..
                 } = self;
-                if let Some(event) = screen.update(profiles, message) {
+                if let Some(event) = screen.update(profiles, message, theme.name()) {
                     match event {
-                        screen::Event::ExitRequested => {
-                            self.prepare_close();
-                            Command::none()
-                        }
+                        screen::Event::ExitRequested => self.prepare_close(),
                         screen::Event::Save => self.save(),
                         screen::Event::SelectTheme(new_theme) => {
-                            *theme = new_theme;
+                            *theme = style::Theme::new(new_theme);
                             self.save()
                         }
                     }
@@ -102,56 +99,50 @@ impl Application for Linkage {
     fn subscription(&self) -> Subscription<Message> {
         Subscription::batch(vec![
             self.screen.subscription().map(Message::Screen),
-            iced_native::subscription::events().map(Message::Event),
+            iced::subscription::events().map(Message::Event),
         ])
     }
 
-    fn should_exit(&self) -> bool {
-        self.should_exit
-    }
-
-    fn view(&mut self) -> Element<Message> {
+    fn view(&self) -> Element<Self::Message, iced::Renderer<Self::Theme>> {
         let Linkage {
-            screen,
-            theme,
-            profiles,
-            ..
+            screen, profiles, ..
         } = self;
-        let content = screen.view(profiles, theme).map(Message::Screen);
+        let content = screen.view(profiles).map(Message::Screen);
 
         Container::new(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x()
             .center_y()
-            .style(style::container::primary(&self.theme))
+            .style(style::Container::Primary)
             .into()
+    }
+
+    fn theme(&self) -> Self::Theme {
+        self.theme.clone()
     }
 }
 
 impl Linkage {
-    fn handle_event(&mut self, event: iced_native::Event) -> Command<Message> {
+    fn handle_event(&mut self, event: iced::Event) -> Command<Message> {
         use iced::keyboard::{self, KeyCode};
-        use iced_native::event::Event;
+        use iced::Event;
 
         match event {
             Event::Window(window::Event::CloseRequested) => {
                 return self.prepare_close();
             }
-            Event::Keyboard(keyboard_event) => match keyboard_event {
-                keyboard::Event::KeyPressed {
-                    key_code,
-                    modifiers,
-                } => match key_code {
-                    KeyCode::Escape => {
-                        return self.go_back();
-                    }
-                    #[cfg(target_os = "macos")]
-                    KeyCode::Q if modifiers.command() => {
-                        return self.prepare_close();
-                    }
-                    _ => {}
-                },
+            Event::Keyboard(keyboard::Event::KeyPressed {
+                key_code,
+                modifiers,
+            }) => match key_code {
+                KeyCode::Escape => {
+                    return self.go_back();
+                }
+                #[cfg(target_os = "macos")]
+                KeyCode::Q if modifiers.command() => {
+                    return self.prepare_close();
+                }
                 _ => {}
             },
             _ => {}
@@ -161,9 +152,10 @@ impl Linkage {
     }
 
     fn prepare_close(&mut self) -> Command<Message> {
+        use iced::widget::runtime::command;
+
         println!("Preparing to close.");
-        self.should_exit = true;
-        Command::none()
+        Command::single(command::Action::Window(window::Action::Close))
     }
 
     fn go_back(&mut self) -> Command<Message> {
@@ -172,7 +164,7 @@ impl Linkage {
     }
 
     fn save(&self) -> Command<Message> {
-        let saved = data::Saved::new(self.profiles.clone(), &self.theme);
+        let saved = data::Saved::new(self.profiles.clone(), self.theme.name());
         Command::perform(save(saved), |_| Message::Saved)
     }
 }

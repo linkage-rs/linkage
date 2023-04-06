@@ -1,6 +1,8 @@
 use crate::data::profile;
 use crate::data::Theme;
-use iced::{Element, Subscription};
+use crate::Element;
+
+use iced::Subscription;
 
 pub mod loading;
 mod settings;
@@ -19,6 +21,7 @@ pub enum Screen {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
 pub enum Message {
     Loading(loading::Message),
     Settings(settings::Message),
@@ -45,72 +48,74 @@ impl Screen {
     }
 
     pub fn go_back(&mut self, profiles: &profile::List) {
-        match self {
-            Screen::Settings(..) => {
-                *self = Screen::training(profiles);
-            }
-            _ => {}
+        if let Screen::Settings(_) = self {
+            *self = Screen::training(profiles);
         }
     }
 
-    pub fn update(&mut self, profiles: &mut profile::List, message: Message) -> Option<Event> {
+    pub fn update(
+        &mut self,
+        profiles: &mut profile::List,
+        message: Message,
+        active: &'static str,
+    ) -> Option<Event> {
         match self {
-            Screen::Loading(state) => match message {
-                Message::Loading(message) => match state.update(message) {
-                    Some(event) => match event {
-                        loading::Event::Load {
-                            profiles: loaded,
-                            theme,
-                        } => {
-                            *profiles = loaded;
-                            *self = Screen::training(&profiles);
-                            return Some(Event::SelectTheme(theme));
+            Screen::Loading(state) => {
+                if let Message::Loading(message) = message {
+                    if let Some(event) = state.update(message) {
+                        match event {
+                            loading::Event::Load {
+                                profiles: loaded,
+                                theme,
+                            } => {
+                                *profiles = loaded;
+                                *self = Screen::training(profiles);
+                                return Some(Event::SelectTheme(theme));
+                            }
                         }
-                    },
-                    None => {}
-                },
-                _ => {}
-            },
-            Screen::Training(state) => match message {
-                Message::Training(message) => match state.update(profiles, message) {
-                    Some((_command, event)) => match event {
-                        training::Event::Save => {
-                            return Some(Event::Save);
+                    }
+                }
+            }
+            Screen::Training(state) => {
+                if let Message::Training(message) = message {
+                    if let Some((_command, event)) = state.update(profiles, message) {
+                        match event {
+                            training::Event::Save => {
+                                return Some(Event::Save);
+                            }
+                            training::Event::Settings => {
+                                *self = Screen::settings();
+                            }
                         }
-                        training::Event::Settings => {
-                            *self = Screen::settings();
+                    }
+                }
+            }
+            Screen::Settings(state) => {
+                if let Message::Settings(message) = message {
+                    if let Some(event) = state.update(profiles, message, active) {
+                        match event {
+                            settings::Event::Exit => {
+                                *self = Screen::training(profiles);
+                            }
+                            settings::Event::Save => {
+                                return Some(Event::Save);
+                            }
+                            settings::Event::SelectTheme(theme) => {
+                                return Some(Event::SelectTheme(theme));
+                            }
                         }
-                    },
-                    None => {}
-                },
-                _ => {}
-            },
-            Screen::Settings(state) => match message {
-                Message::Settings(message) => match state.update(profiles, message) {
-                    Some(event) => match event {
-                        settings::Event::Exit => {
-                            *self = Screen::training(&profiles);
-                        }
-                        settings::Event::Save => {
-                            return Some(Event::Save);
-                        }
-                        settings::Event::SelectTheme(theme) => {
-                            return Some(Event::SelectTheme(theme));
-                        }
-                    },
-                    None => {}
-                },
-                _ => {}
-            },
+                    }
+                }
+            }
         }
         None
     }
 
-    pub fn view(&mut self, profiles: &profile::List, theme: &Theme) -> Element<Message> {
+    pub fn view(&self, profiles: &profile::List) -> Element<Message> {
         match self {
-            Screen::Loading(loading) => loading.view(theme).map(Message::Loading),
-            Screen::Settings(state) => state.view(profiles, theme).map(Message::Settings),
-            Screen::Training(state) => state.view(profiles, theme).map(Message::Training),
+            Screen::Loading(loading) => loading.view().map(Message::Loading),
+            Screen::Settings(state) => state.view(profiles).map(Message::Settings),
+            Screen::Training(state) => state.view(profiles).map(Message::Training),
         }
     }
 
@@ -119,5 +124,11 @@ impl Screen {
             Screen::Training { .. } => training::subscription().map(Message::Training),
             _ => Subscription::none(),
         }
+    }
+}
+
+impl Default for Screen {
+    fn default() -> Self {
+        Screen::new()
     }
 }

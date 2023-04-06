@@ -1,7 +1,7 @@
 use super::CharSet;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
 pub enum Layout {
     Colemak,
     ColemakDH,
@@ -9,16 +9,11 @@ pub enum Layout {
     ColemakOrtholinear,
     Dvorak,
     DvorakOrtholinear,
+    #[default]
     Qwerty,
     QwertyOrtholinear,
     Workman,
     WorkmanOrtholinear,
-}
-
-impl Default for Layout {
-    fn default() -> Self {
-        Layout::Qwerty
-    }
 }
 
 impl std::fmt::Display for Layout {
@@ -62,7 +57,7 @@ impl Layout {
     pub fn next_char(&self, char_set: &CharSet) -> Option<char> {
         self.letter_order()
             .iter()
-            .filter(|&letter| !char_set.contains(&letter))
+            .filter(|&letter| !char_set.contains(letter))
             .cloned()
             .next()
     }

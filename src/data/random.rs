@@ -122,7 +122,7 @@ fn cumulative(mapping: HashMap<String, f32>) -> Vec<(u16, char)> {
         .iter()
         .map(|(letter, ratio)| ((s32 * ratio).round() as u16, letter.chars().next().unwrap()))
         .collect();
-    cumulative.sort_by(|(a, _), (b, _)| b.cmp(&a));
+    cumulative.sort_by(|(a, _), (b, _)| b.cmp(a));
     let mut c = 0;
     cumulative
         .into_iter()

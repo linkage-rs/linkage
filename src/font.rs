@@ -1,19 +1,42 @@
-use iced::Font;
-
 /// Iosevka Fixed Extended Thin - Weight 100
-pub const THIN: Font = Font::External {
-    name: "Iosevka Extended Thin",
-    bytes: include_bytes!("../fonts/iosevka-fixed-extendedthin.ttf"),
-};
+// name: "Iosevka Extended Thin",
+pub const THIN: &[u8] = include_bytes!("../fonts/iosevka-fixed-extendedthin.ttf");
 
 /// Iosevka Fixed Extended Light - Weight 300
-pub const LIGHT: Font = Font::External {
-    name: "Iosevka Extended Light",
-    bytes: include_bytes!("../fonts/iosevka-fixed-extendedlight.ttf"),
-};
+// name: "Iosevka Extended Light",
+pub const LIGHT: &[u8] = include_bytes!("../fonts/iosevka-fixed-extendedlight.ttf");
 
 /// Iosevka Fixed Extended Medium - Weight 500
-pub const MEDIUM: Font = Font::External {
-    name: "Iosevka Extended Medium",
-    bytes: include_bytes!("../fonts/iosevka-fixed-extendedmedium.ttf"),
-};
+// name: "Iosevka Extended Medium",
+pub const MEDIUM: &[u8] = include_bytes!("../fonts/iosevka-fixed-extendedmedium.ttf");
+
+pub enum Font {
+    Thin,
+    Light,
+    Medium,
+}
+
+impl Font {
+    fn name(&self) -> &'static str {
+        "Iosevka Fixed"
+    }
+
+    fn weight(&self) -> iced::font::Weight {
+        match self {
+            Font::Thin => iced::font::Weight::Thin,
+            Font::Light => iced::font::Weight::Light,
+            Font::Medium => iced::font::Weight::Medium,
+        }
+    }
+}
+
+impl From<Font> for iced::Font {
+    fn from(font: Font) -> Self {
+        iced::Font {
+            family: iced::font::Family::Name(font.name()),
+            weight: font.weight(),
+            stretch: iced::font::Stretch::Expanded,
+            monospaced: true,
+        }
+    }
+}

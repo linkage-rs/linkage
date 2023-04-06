@@ -1,9 +1,9 @@
 use crate::data::{self, Theme};
 use crate::style;
+use crate::Element;
 
-use iced::button::{self, Button};
-use iced::scrollable::{self, Scrollable};
-use iced::{Column, Container, Element, Length, Row, Rule, Text};
+use iced::widget::{container, Button, Column, Container, Row, Rule, Scrollable, Text};
+use iced::Length;
 
 mod profile;
 mod theme;
@@ -11,9 +11,6 @@ mod theme;
 #[derive(Debug)]
 pub struct State {
     screen: Screen,
-    back_button: button::State,
-    menu_buttons: Vec<button::State>,
-    menu_scroll: scrollable::State,
 }
 
 #[derive(Debug)]
@@ -41,9 +38,6 @@ impl State {
     pub fn new() -> Self {
         Self {
             screen: Screen::profile(),
-            back_button: button::State::new(),
-            menu_buttons: Vec::new(),
-            menu_scroll: scrollable::State::new(),
         }
     }
 
@@ -51,6 +45,7 @@ impl State {
         &mut self,
         profiles: &mut data::profile::List,
         message: Message,
+        active: &'static str,
     ) -> Option<Event> {
         let State { ref mut screen, .. } = self;
         match message {
@@ -79,23 +74,18 @@ impl State {
                 }
             }
             Message::ThemesPressed => {
-                *screen = Screen::theme();
+                *screen = Screen::theme(active);
             }
         }
         None
     }
 
-    pub fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
-        let State {
-            screen,
-            back_button,
-            menu_buttons,
-            menu_scroll,
-        } = self;
+    pub fn view(&self, profiles: &data::profile::List) -> Element<Message> {
+        let State { screen } = self;
 
-        let back_button = Button::new(back_button, Text::new("\u{2190} Back").size(14))
+        let back_button = Button::new(Text::new("\u{2190} Back").size(14))
             .on_press(Message::BackButtonPressed)
-            .style(style::button::text(theme))
+            .style(style::Button::Text)
             .padding(10);
 
         let menu_items = vec![
@@ -111,13 +101,10 @@ impl State {
             },
         ];
 
-        menu_buttons.resize(menu_items.len(), button::State::new());
-
         let menu = Column::with_children(
             menu_items
                 .into_iter()
-                .zip(menu_buttons)
-                .map(|(item, state)| {
+                .map(|item| {
                     let MenuItem {
                         label,
                         message,
@@ -129,12 +116,12 @@ impl State {
                         .center_y();
                     if is_active {
                         Container::new(text)
-                            .style(style::container::menu_selected(theme))
+                            .style(style::Container::MenuSelected)
                             .width(Length::Fill)
                             .into()
                     } else {
-                        Button::new(state, text)
-                            .style(style::button::menu(theme, is_active))
+                        Button::new(text)
+                            .style(style::Button::Menu { selected: false })
                             .width(Length::Fill)
                             .on_press(message)
                             .padding(0)
@@ -143,25 +130,28 @@ impl State {
                 })
                 .collect(),
         );
-        let menu = Scrollable::new(menu_scroll)
-            .push(menu)
-            .height(Length::Fill)
-            .width(Length::Units(125));
+        let menu = container(Scrollable::new(menu).height(Length::Fill)).width(125);
 
         let content = Row::new()
             .push(menu)
-            .push(Rule::vertical(0).style(style::rule::divider(theme)))
-            .push(screen.view(profiles, theme))
+            .push(Rule::vertical(1).style(style::Rule::Divider))
+            .push(screen.view(profiles))
             .height(Length::Fill)
             .width(Length::Fill);
 
         Column::new()
             .push(back_button)
-            .push(Rule::horizontal(0).style(style::rule::divider(theme)))
+            .push(Rule::horizontal(1).style(style::Rule::Divider))
             .push(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
+    }
+}
+
+impl Default for State {
+    fn default() -> Self {
+        State::new()
     }
 }
 
@@ -176,14 +166,14 @@ impl Screen {
         Screen::Profile(profile::State::new())
     }
 
-    fn theme() -> Self {
-        Screen::Theme(theme::State::new())
+    fn theme(active: &'static str) -> Self {
+        Screen::Theme(theme::State::new(active))
     }
 
-    fn view(&mut self, profiles: &data::profile::List, theme: &Theme) -> Element<Message> {
+    fn view(&self, profiles: &data::profile::List) -> Element<Message> {
         match self {
-            Screen::Profile(state) => state.view(profiles, theme).map(Message::Profile),
-            Screen::Theme(state) => state.view(theme).map(Message::Theme),
+            Screen::Profile(state) => state.view(profiles).map(Message::Profile),
+            Screen::Theme(state) => state.view().map(Message::Theme),
         }
     }
 }

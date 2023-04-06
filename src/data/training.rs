@@ -15,7 +15,7 @@ pub const CLEAN_ALPHA_COEFF: f32 = 1.0 / (1.0 + 10.0);
 pub const MIN_CLEAN_PCT: f32 = 0.75;
 const CHARACTERS_PER_WORD: f64 = 5.0;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct State {
     /// Which characters are in our set
     char_set: CharSet,
@@ -30,15 +30,16 @@ pub struct State {
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct WordsPerMinute(f64);
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub enum Difficulty {
     Easy,
     Casual,
+    #[default]
     Normal,
     Strict,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct Stats {
     raw: Vec<WordsPerMinute>,
     pub wpm_mean: WordsPerMinute,
@@ -86,6 +87,7 @@ pub struct Session {
 #[derive(Debug, Clone)]
 pub struct Line {
     hits: Vec<Hit>,
+    #[allow(dead_code)]
     time: OffsetDateTime,
 }
 
@@ -95,6 +97,7 @@ pub struct Hit {
     /// The character to type
     target: char,
     /// The previous character typed
+    #[allow(dead_code)]
     prev: char,
     /// Incorrect keys hit instead of the target
     misses: CharSet,
@@ -255,12 +258,6 @@ impl Difficulty {
     }
 }
 
-impl Default for Difficulty {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
-
 impl std::fmt::Display for Difficulty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
@@ -287,16 +284,6 @@ impl Stats {
         let data = statistics::Data::new(raw.as_mut_slice());
         self.wpm_mean = round(data.mean().unwrap_or_default(), 2).into();
         self.wpm_harmonic_mean = round(raw.harmonic_mean(), 2).into();
-    }
-}
-
-impl Default for Stats {
-    fn default() -> Self {
-        Self {
-            raw: Vec::new(),
-            wpm_mean: WordsPerMinute::default(),
-            wpm_harmonic_mean: WordsPerMinute::default(),
-        }
     }
 }
 
@@ -439,7 +426,7 @@ pub struct TriplePoint {
 
 impl TriplePoint {
     pub fn new(lower: f32, mid: f32, upper: f32) -> Option<Self> {
-        (lower < mid && mid < upper).then(|| Self { lower, mid, upper })
+        (lower < mid && mid < upper).then_some(Self { lower, mid, upper })
     }
 
     /// Map values on two linear scales between [lower, mid] and [mid, upper]

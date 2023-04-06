@@ -24,12 +24,17 @@ impl<T, U> ZipperList<T, U> {
         self.prev.len() + 1 + self.next.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        // Zipper List cannot be empty, by definition
+        false
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = Item<&T, &U>> {
         self.prev
             .iter()
-            .map(|item| Item::Other(item))
+            .map(Item::Other)
             .chain(std::iter::once(Item::Current(&self.current)))
-            .chain(self.next.iter().map(|item| Item::Other(item)))
+            .chain(self.next.iter().map(Item::Other))
     }
 
     pub fn push(&mut self, item: T) {
@@ -51,7 +56,7 @@ where
             next.append(&mut self.next);
             self.next = next;
             true
-        } else if index >= self.prev.len() + 1 && index < self.len() {
+        } else if index > self.prev.len() && index < self.len() {
             let index = index - self.prev.len() - 1;
             let next_current = self.next.remove(index);
             let old_current = std::mem::replace(&mut self.current, next_current.into());
