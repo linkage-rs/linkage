@@ -1,6 +1,6 @@
 [package]
 name = "linkage"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Clark Moody <clark@clarkmoody.com>"]
 edition = "2021"
 
