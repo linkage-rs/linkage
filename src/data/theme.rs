@@ -16,10 +16,12 @@ impl Theme {
     pub fn all() -> Vec<Self> {
         vec![
             Self::ayu(),
-            Self::monokai(),
-            Self::tokyo_night(),
-            Self::one_dark(),
             Self::dracula(),
+            Self::monokai(),
+            Self::nord(),
+            Self::nord_light(),
+            Self::one_dark(),
+            Self::tokyo_night(),
         ]
     }
 
@@ -84,6 +86,30 @@ impl Theme {
             hit: Color::from_rgba8(0x44, 0x47, 0x5A, 1.0),
             miss: Color::from_rgba8(0xFF, 0xB8, 0x6C, 1.0),
             error: Color::from_rgba8(0xFF, 0x55, 0x55, 1.0),
+        }
+    }
+
+    pub fn nord() -> Self {
+        Self {
+            name: "Nord",
+            bg: Color::from_rgba8(0x2e, 0x34, 0x40, 1.0),
+            text: Color::from_rgba8(0xEC, 0xEF, 0xF4, 1.0),
+            target: Color::from_rgba8(0x88, 0xC0, 0xD0, 1.0),
+            hit: Color::from_rgba8(0xD8, 0xDE, 0xE9, 1.0),
+            miss: Color::from_rgba8(0xEB, 0xCB, 0x8B, 1.0),
+            error: Color::from_rgba8(0xBF, 0x61, 0x6A, 1.0),
+        }
+    }
+
+    pub fn nord_light() -> Self {
+        Self {
+            name: "Nord Light",
+            bg: Color::from_rgba8(0xEC, 0xEF, 0xF4, 1.0),
+            text: Color::from_rgba8(0x2e, 0x34, 0x40, 1.0),
+            target: Color::from_rgba8(0x88, 0xC0, 0xD0, 1.0),
+            hit: Color::from_rgba8(0x3B, 0x42, 0x52, 1.0),
+            miss: Color::from_rgba8(0xEB, 0xCB, 0x8B, 1.0),
+            error: Color::from_rgba8(0xBF, 0x61, 0x6A, 1.0),
         }
     }
 
