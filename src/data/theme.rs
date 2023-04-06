@@ -19,6 +19,7 @@ impl Theme {
             Self::monokai(),
             Self::tokyo_night(),
             Self::one_dark(),
+            Self::dracula(),
         ]
     }
 
@@ -71,6 +72,18 @@ impl Theme {
             hit: Color::from_rgba8(0x5C, 0x63, 0x70, 1.0),
             miss: Color::from_rgba8(0xD1, 0x9A, 0x66, 1.0),
             error: Color::from_rgba8(0xBE, 0x50, 0x46, 1.0),
+        }
+    }
+
+    pub fn dracula() -> Self {
+        Self {
+            name: "Dracula",
+            bg: Color::from_rgba8(0x28, 0x2A, 0x36, 1.0),
+            text: Color::from_rgba8(0xF8, 0xF8, 0xF2, 1.0),
+            target: Color::from_rgba8(0xBD, 0x93, 0xF9, 1.0),
+            hit: Color::from_rgba8(0x44, 0x47, 0x5A, 1.0),
+            miss: Color::from_rgba8(0xFF, 0xB8, 0x6C, 1.0),
+            error: Color::from_rgba8(0xFF, 0x55, 0x55, 1.0),
         }
     }
 
