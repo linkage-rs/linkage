@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
+
+use super::CharSet;
 use super::dictionary::Dictionary;
 use super::random::Random;
-use super::CharSet;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum Setting {

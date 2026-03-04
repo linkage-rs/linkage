@@ -1,9 +1,7 @@
-use crate::data::{self, Theme};
-use crate::style;
-use crate::Element;
+use iced::widget::{Column, Row, button, column, container, rule, scrollable, text};
+use iced::{Element, Length};
 
-use iced::widget::{container, Button, Column, Container, Row, Rule, Scrollable, Text};
-use iced::Length;
+use crate::data::{self, Theme};
 
 mod profile;
 mod theme;
@@ -47,7 +45,7 @@ impl State {
         message: Message,
         active: &'static str,
     ) -> Option<Event> {
-        let State { ref mut screen, .. } = self;
+        let State { screen, .. } = self;
         match message {
             Message::BackButtonPressed => {
                 return Some(Event::Exit);
@@ -80,12 +78,12 @@ impl State {
         None
     }
 
-    pub fn view(&self, profiles: &data::profile::List) -> Element<Message> {
+    pub fn view(&self, profiles: &data::profile::List) -> Element<'_, Message> {
         let State { screen } = self;
 
-        let back_button = Button::new(Text::new("\u{2190} Back").size(14))
+        let back_button = button(text("\u{2190} Back").size(14))
             .on_press(Message::BackButtonPressed)
-            .style(style::Button::Text)
+            .style(button::text)
             .padding(10);
 
         let menu_items = vec![
@@ -104,45 +102,42 @@ impl State {
         let menu = Column::with_children(
             menu_items
                 .into_iter()
-                .map(|item| {
+                .map(|item| -> Element<Message> {
                     let MenuItem {
                         label,
                         message,
                         is_active,
                     } = item;
-                    let text = Container::new(Text::new(label).size(14))
+                    let label_text = container(text(label).size(14))
                         .padding(6)
-                        .center_x()
-                        .center_y();
+                        .center_x(Length::Fill)
+                        .center_y(Length::Fill);
                     if is_active {
-                        Container::new(text)
-                            .style(style::Container::MenuSelected)
+                        container(label_text)
+                            .style(container::rounded_box)
                             .width(Length::Fill)
                             .into()
                     } else {
-                        Button::new(text)
-                            .style(style::Button::Menu { selected: false })
+                        button(label_text)
+                            .style(button::text)
                             .width(Length::Fill)
                             .on_press(message)
                             .padding(0)
                             .into()
                     }
                 })
-                .collect(),
+                .collect::<Vec<Element<Message>>>(),
         );
-        let menu = container(Scrollable::new(menu).height(Length::Fill)).width(125);
+        let menu = container(scrollable(menu).height(Length::Fill)).width(125);
 
         let content = Row::new()
             .push(menu)
-            .push(Rule::vertical(1).style(style::Rule::Divider))
+            .push(rule::vertical(1))
             .push(screen.view(profiles))
             .height(Length::Fill)
             .width(Length::Fill);
 
-        Column::new()
-            .push(back_button)
-            .push(Rule::horizontal(1).style(style::Rule::Divider))
-            .push(content)
+        column![back_button, rule::horizontal(1), content,]
             .width(Length::Fill)
             .height(Length::Fill)
             .into()
@@ -170,7 +165,7 @@ impl Screen {
         Screen::Theme(theme::State::new(active))
     }
 
-    fn view(&self, profiles: &data::profile::List) -> Element<Message> {
+    fn view(&self, profiles: &data::profile::List) -> Element<'_, Message> {
         match self {
             Screen::Profile(state) => state.view(profiles).map(Message::Profile),
             Screen::Theme(state) => state.view().map(Message::Theme),

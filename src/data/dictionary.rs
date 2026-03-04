@@ -1,6 +1,7 @@
-use super::CharSet;
-use rand::distributions::{Distribution, Uniform};
+use rand::distr::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
+
+use super::CharSet;
 
 const EN_WORDS: &[u8] = include_bytes!("../../data/en/popular.txt");
 
@@ -19,13 +20,13 @@ impl Dictionary {
             .split('\n')
             .filter_map(|s| (!s.is_empty()).then(|| s.trim().to_string()))
             .collect();
-        let dist = Uniform::new(0, words.len());
-        let unit_dist = Uniform::new_inclusive(0.0, 1.0);
+        let dist = Uniform::new(0, words.len().max(1)).unwrap();
+        let unit_dist = Uniform::new_inclusive(0.0, 1.0).unwrap();
 
         Dictionary {
             words,
             dist,
-            rng: rand::thread_rng(),
+            rng: rand::rng(),
             unit_dist,
         }
     }
@@ -39,12 +40,12 @@ impl Dictionary {
             .filter(|word| word.chars().all(|c| char_set.contains(&c)))
             .cloned()
             .collect();
-        let dist = Uniform::new(0, words.len());
+        let dist = Uniform::new(0, words.len().max(1)).unwrap();
 
         Dictionary {
             words,
             dist,
-            rng: rand::thread_rng(),
+            rng: rand::rng(),
             unit_dist: self.unit_dist,
         }
     }
@@ -58,12 +59,12 @@ impl Dictionary {
             .cloned()
             .collect();
         (!words.is_empty()).then(|| {
-            let dist = Uniform::new(0, words.len());
+            let dist = Uniform::new(0, words.len().max(1)).unwrap();
 
             Dictionary {
                 words,
                 dist,
-                rng: rand::thread_rng(),
+                rng: rand::rng(),
                 unit_dist: self.unit_dist,
             }
         })
@@ -78,12 +79,12 @@ impl Dictionary {
             .cloned()
             .collect();
         (!words.is_empty()).then(|| {
-            let dist = Uniform::new(0, words.len());
+            let dist = Uniform::new(0, words.len()).unwrap();
 
             Dictionary {
                 words,
                 dist,
-                rng: rand::thread_rng(),
+                rng: rand::rng(),
                 unit_dist: self.unit_dist,
             }
         })

@@ -1,12 +1,5 @@
-// pub mod button;
-// pub mod container;
-// pub mod pick_list;
-// pub mod rule;
-// pub mod text_input;
-
-use iced::widget::overlay::menu;
 use iced::widget::{button, container, pick_list, rule, scrollable, text, text_input};
-use iced::{Background, Color};
+use iced::{Background, Border, Color};
 
 use crate::data;
 use crate::data::theme::alpha;
@@ -24,16 +17,9 @@ impl Theme {
     pub fn name(&self) -> &'static str {
         self.theme.name
     }
-}
 
-impl iced::application::StyleSheet for Theme {
-    type Style = Theme;
-
-    fn appearance(&self, _style: &Self::Style) -> iced::application::Appearance {
-        iced::application::Appearance {
-            background_color: self.theme.bg,
-            text_color: self.theme.text,
-        }
+    pub fn data(&self) -> &data::Theme {
+        &self.theme
     }
 }
 
@@ -48,24 +34,22 @@ pub enum Text {
     Target,
 }
 
-impl text::StyleSheet for Theme {
-    type Style = Text;
-
-    fn appearance(&self, style: Self::Style) -> text::Appearance {
-        let color = match style {
+impl Text {
+    /// Produce a text style function for the given variant and theme.
+    pub fn style_fn(self, theme: &data::Theme) -> text::Style {
+        let color = match self {
             Text::Default => None,
-            Text::Error => Some(self.theme.error),
-            Text::Metric(metric) => Some(self.theme.metric(metric)),
-            Text::Miss => Some(self.theme.miss),
+            Text::Error => Some(theme.error),
+            Text::Metric(metric) => Some(theme.metric(metric)),
+            Text::Miss => Some(theme.miss),
             Text::Override(color) => Some(color),
-            Text::Target => Some(self.theme.target),
+            Text::Target => Some(theme.target),
         };
-
-        text::Appearance { color }
+        text::Style { color }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum Button {
     /// Accept changes
     Accept,
@@ -82,184 +66,255 @@ pub enum Button {
     ThemePreview(data::Theme),
 }
 
-impl button::StyleSheet for Theme {
-    type Style = Button;
-
-    fn active(&self, style: &Self::Style) -> button::Appearance {
-        let appearance = button::Appearance {
-            border_radius: 2.0,
-            border_width: 1.0,
-            border_color: alpha(self.theme.text, 0.15),
-            text_color: alpha(self.theme.text, 0.75),
-            ..button::Appearance::default()
-        };
-
-        match style {
-            Button::Accept => button::Appearance {
-                background: alpha(self.theme.target, 0.05).into(),
-                border_color: alpha(self.theme.target, 0.15),
-                text_color: alpha(self.theme.target, 0.75),
-                ..appearance
-            },
-            Button::Basic => appearance,
-            Button::Menu { selected } => button::Appearance {
-                background: selected.then(|| alpha(self.theme.text, 0.05).into()),
-                text_color: if *selected {
-                    self.theme.text
-                } else {
-                    alpha(self.theme.text, 0.5)
+impl Button {
+    pub fn style_fn<'a>(
+        self,
+        theme: &data::Theme,
+    ) -> impl Fn(&iced::Theme, button::Status) -> button::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme, status: button::Status| {
+            let base = button::Style {
+                border: Border {
+                    radius: 2.0.into(),
+                    width: 1.0,
+                    color: alpha(t.text, 0.15),
                 },
-                ..button::Appearance::default()
-            },
-            Button::Reject => button::Appearance {
-                background: alpha(self.theme.error, 0.05).into(),
-                border_color: alpha(self.theme.error, 0.15),
-                text_color: alpha(self.theme.error, 0.75),
-                ..appearance
-            },
-            Button::Text => button::Appearance {
-                text_color: alpha(self.theme.text, 0.5),
-                border_width: 0.0,
-                ..appearance
-            },
-            Button::ThemePreview(theme) => button::Appearance {
-                border_color: alpha(theme.text, 0.15),
-                text_color: alpha(theme.text, 0.75),
-                ..appearance
-            },
-        }
-    }
+                text_color: alpha(t.text, 0.75),
+                ..button::Style::default()
+            };
 
-    fn hovered(&self, style: &Self::Style) -> button::Appearance {
-        let appearance = button::Appearance {
-            background: Some(alpha(self.theme.text, 0.025).into()),
-            border_color: alpha(self.theme.text, 0.5),
-            text_color: self.theme.text,
-            ..self.active(style)
-        };
-
-        match style {
-            Button::Accept => button::Appearance {
-                background: alpha(self.theme.target, 0.1).into(),
-                border_color: alpha(self.theme.target, 0.5),
-                text_color: self.theme.target,
-                ..appearance
-            },
-            Button::Basic => appearance,
-            Button::Menu { selected } => button::Appearance {
-                background: selected.then(|| alpha(self.theme.text, 0.075).into()),
-                text_color: if *selected {
-                    self.theme.text
-                } else {
-                    alpha(self.theme.text, 0.75)
+            match &self {
+                Button::Accept => match status {
+                    button::Status::Active => button::Style {
+                        background: Some(alpha(t.target, 0.05).into()),
+                        border: Border {
+                            color: alpha(t.target, 0.15),
+                            ..base.border
+                        },
+                        text_color: alpha(t.target, 0.75),
+                        ..base
+                    },
+                    button::Status::Hovered => button::Style {
+                        background: Some(alpha(t.target, 0.1).into()),
+                        border: Border {
+                            color: alpha(t.target, 0.5),
+                            ..base.border
+                        },
+                        text_color: t.target,
+                        ..base
+                    },
+                    button::Status::Pressed => button::Style {
+                        background: Some(alpha(t.target, 0.075).into()),
+                        border: Border {
+                            color: alpha(t.target, 0.4),
+                            ..base.border
+                        },
+                        text_color: alpha(t.target, 0.85),
+                        ..base
+                    },
+                    button::Status::Disabled => button::Style {
+                        background: Some(alpha(t.target, 0.025).into()),
+                        border: Border {
+                            color: alpha(t.target, 0.05),
+                            ..base.border
+                        },
+                        text_color: alpha(t.target, 0.05),
+                        ..base
+                    },
                 },
-                ..self.active(style)
-            },
-            Button::Reject => button::Appearance {
-                background: alpha(self.theme.error, 0.1).into(),
-                border_color: alpha(self.theme.error, 0.5),
-                text_color: self.theme.error,
-                ..appearance
-            },
-            Button::Text => button::Appearance {
-                text_color: self.theme.text,
-                ..self.active(style)
-            },
-            Button::ThemePreview(theme) => button::Appearance {
-                background: Some(alpha(theme.text, 0.025).into()),
-                border_color: alpha(theme.text, 0.5),
-                text_color: theme.text,
-                ..self.active(style)
-            },
-        }
-    }
-
-    fn pressed(&self, style: &Self::Style) -> button::Appearance {
-        let appearance = button::Appearance {
-            background: Some(alpha(self.theme.text, 0.015).into()),
-            border_color: alpha(self.theme.text, 0.1),
-            text_color: alpha(self.theme.text, 0.6),
-            ..self.hovered(style)
-        };
-
-        match style {
-            Button::Accept => button::Appearance {
-                background: alpha(self.theme.target, 0.075).into(),
-                border_color: alpha(self.theme.target, 0.4),
-                text_color: alpha(self.theme.target, 0.85),
-                ..appearance
-            },
-            Button::Basic => appearance,
-            Button::Menu { selected } => button::Appearance {
-                background: selected.then(|| alpha(self.theme.text, 0.07).into()),
-                text_color: if *selected {
-                    self.theme.text
-                } else {
-                    alpha(self.theme.text, 0.6)
+                Button::Basic => match status {
+                    button::Status::Active => base,
+                    button::Status::Hovered => button::Style {
+                        background: Some(alpha(t.text, 0.025).into()),
+                        border: Border {
+                            color: alpha(t.text, 0.5),
+                            ..base.border
+                        },
+                        text_color: t.text,
+                        ..base
+                    },
+                    button::Status::Pressed => button::Style {
+                        background: Some(alpha(t.text, 0.015).into()),
+                        border: Border {
+                            color: alpha(t.text, 0.1),
+                            ..base.border
+                        },
+                        text_color: alpha(t.text, 0.6),
+                        ..base
+                    },
+                    button::Status::Disabled => button::Style {
+                        background: None,
+                        border: Border {
+                            color: alpha(t.text, 0.05),
+                            ..base.border
+                        },
+                        text_color: alpha(t.text, 0.05),
+                        ..base
+                    },
                 },
-                ..self.active(style)
-            },
-            Button::Reject => button::Appearance {
-                background: alpha(self.theme.error, 0.075).into(),
-                border_color: alpha(self.theme.error, 0.4),
-                text_color: alpha(self.theme.error, 0.85),
-                ..appearance
-            },
-            Button::Text => button::Appearance {
-                text_color: alpha(self.theme.text, 0.9),
-                ..self.active(style)
-            },
-            Button::ThemePreview(theme) => button::Appearance {
-                background: Some(alpha(theme.text, 0.015).into()),
-                border_color: alpha(theme.text, 0.4),
-                text_color: alpha(theme.text, 0.6),
-                ..self.active(style)
-            },
-        }
-    }
-
-    fn disabled(&self, style: &Self::Style) -> button::Appearance {
-        let appearance = button::Appearance {
-            background: None,
-            border_color: alpha(self.theme.text, 0.05),
-            text_color: alpha(self.theme.text, 0.05),
-            ..self.active(style)
-        };
-
-        match style {
-            Button::Accept => button::Appearance {
-                background: alpha(self.theme.target, 0.025).into(),
-                border_color: alpha(self.theme.target, 0.05),
-                text_color: alpha(self.theme.target, 0.05),
-                ..appearance
-            },
-            Button::Basic => appearance,
-            Button::Menu { selected } => button::Appearance {
-                background: selected.then(|| alpha(self.theme.text, 0.025).into()),
-                text_color: alpha(self.theme.text, 0.25),
-                ..self.active(style)
-            },
-            Button::Reject => button::Appearance {
-                background: alpha(self.theme.error, 0.025).into(),
-                border_color: alpha(self.theme.error, 0.05),
-                text_color: alpha(self.theme.error, 0.05),
-                ..appearance
-            },
-            Button::Text => button::Appearance {
-                text_color: alpha(self.theme.text, 0.25),
-                ..self.active(style)
-            },
-            Button::ThemePreview(theme) => button::Appearance {
-                background: None,
-                border_color: alpha(theme.text, 0.05),
-                text_color: alpha(theme.text, 0.05),
-                ..self.active(style)
-            },
+                Button::Menu { selected } => {
+                    let selected = *selected;
+                    match status {
+                        button::Status::Active => button::Style {
+                            background: if selected {
+                                Some(alpha(t.text, 0.05).into())
+                            } else {
+                                None
+                            },
+                            text_color: if selected { t.text } else { alpha(t.text, 0.5) },
+                            ..button::Style::default()
+                        },
+                        button::Status::Hovered => button::Style {
+                            background: if selected {
+                                Some(alpha(t.text, 0.075).into())
+                            } else {
+                                None
+                            },
+                            text_color: if selected {
+                                t.text
+                            } else {
+                                alpha(t.text, 0.75)
+                            },
+                            ..button::Style::default()
+                        },
+                        button::Status::Pressed => button::Style {
+                            background: if selected {
+                                Some(alpha(t.text, 0.07).into())
+                            } else {
+                                None
+                            },
+                            text_color: if selected { t.text } else { alpha(t.text, 0.6) },
+                            ..button::Style::default()
+                        },
+                        button::Status::Disabled => button::Style {
+                            background: if selected {
+                                Some(alpha(t.text, 0.025).into())
+                            } else {
+                                None
+                            },
+                            text_color: alpha(t.text, 0.25),
+                            ..button::Style::default()
+                        },
+                    }
+                }
+                Button::Reject => match status {
+                    button::Status::Active => button::Style {
+                        background: Some(alpha(t.error, 0.05).into()),
+                        border: Border {
+                            color: alpha(t.error, 0.15),
+                            ..base.border
+                        },
+                        text_color: alpha(t.error, 0.75),
+                        ..base
+                    },
+                    button::Status::Hovered => button::Style {
+                        background: Some(alpha(t.error, 0.1).into()),
+                        border: Border {
+                            color: alpha(t.error, 0.5),
+                            ..base.border
+                        },
+                        text_color: t.error,
+                        ..base
+                    },
+                    button::Status::Pressed => button::Style {
+                        background: Some(alpha(t.error, 0.075).into()),
+                        border: Border {
+                            color: alpha(t.error, 0.4),
+                            ..base.border
+                        },
+                        text_color: alpha(t.error, 0.85),
+                        ..base
+                    },
+                    button::Status::Disabled => button::Style {
+                        background: Some(alpha(t.error, 0.025).into()),
+                        border: Border {
+                            color: alpha(t.error, 0.05),
+                            ..base.border
+                        },
+                        text_color: alpha(t.error, 0.05),
+                        ..base
+                    },
+                },
+                Button::Text => match status {
+                    button::Status::Active => button::Style {
+                        text_color: alpha(t.text, 0.5),
+                        border: Border {
+                            width: 0.0,
+                            ..base.border
+                        },
+                        ..base
+                    },
+                    button::Status::Hovered => button::Style {
+                        text_color: t.text,
+                        border: Border {
+                            width: 0.0,
+                            ..base.border
+                        },
+                        ..base
+                    },
+                    button::Status::Pressed => button::Style {
+                        text_color: alpha(t.text, 0.9),
+                        border: Border {
+                            width: 0.0,
+                            ..base.border
+                        },
+                        ..base
+                    },
+                    button::Status::Disabled => button::Style {
+                        text_color: alpha(t.text, 0.25),
+                        border: Border {
+                            width: 0.0,
+                            ..base.border
+                        },
+                        ..base
+                    },
+                },
+                Button::ThemePreview(theme_preview) => {
+                    let tp = theme_preview.clone();
+                    match status {
+                        button::Status::Active => button::Style {
+                            border: Border {
+                                color: alpha(tp.text, 0.15),
+                                ..base.border
+                            },
+                            text_color: alpha(tp.text, 0.75),
+                            ..base
+                        },
+                        button::Status::Hovered => button::Style {
+                            background: Some(alpha(tp.text, 0.025).into()),
+                            border: Border {
+                                color: alpha(tp.text, 0.5),
+                                ..base.border
+                            },
+                            text_color: tp.text,
+                            ..base
+                        },
+                        button::Status::Pressed => button::Style {
+                            background: Some(alpha(tp.text, 0.015).into()),
+                            border: Border {
+                                color: alpha(tp.text, 0.4),
+                                ..base.border
+                            },
+                            text_color: alpha(tp.text, 0.6),
+                            ..base
+                        },
+                        button::Status::Disabled => button::Style {
+                            background: None,
+                            border: Border {
+                                color: alpha(tp.text, 0.05),
+                                ..base.border
+                            },
+                            text_color: alpha(tp.text, 0.05),
+                            ..base
+                        },
+                    }
+                }
+            }
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum Container {
     MenuSelected,
     ThemePreview {
@@ -277,133 +332,139 @@ impl Container {
             bg: theme.bg.into(),
         }
     }
-}
 
-impl container::StyleSheet for Theme {
-    type Style = Container;
-
-    fn appearance(&self, style: &Self::Style) -> container::Appearance {
-        match style {
-            Container::MenuSelected => container::Appearance {
-                text_color: Some(self.theme.text),
-                background: Some(alpha(self.theme.text, 0.05).into()),
+    pub fn style_fn<'a>(
+        self,
+        theme: &data::Theme,
+    ) -> impl Fn(&iced::Theme) -> container::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme| match &self {
+            Container::MenuSelected => container::Style {
+                text_color: Some(t.text),
+                background: Some(alpha(t.text, 0.05).into()),
                 ..Default::default()
             },
-            Container::ThemePreview { fg, bg } => container::Appearance {
+            Container::ThemePreview { fg, bg } => container::Style {
                 text_color: Some(*fg),
                 background: Some(*bg),
                 ..Default::default()
             },
-            Container::Primary => Default::default(),
+            Container::Primary => container::Style::default(),
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum Rule {
     #[default]
     Divider,
 }
 
-impl rule::StyleSheet for Theme {
-    type Style = Rule;
-
-    fn appearance(&self, style: &Self::Style) -> rule::Appearance {
-        use iced::widget::rule::FillMode;
-
-        match style {
-            Rule::Divider => rule::Appearance {
-                color: alpha(self.theme.hit, 0.05),
-                width: 1,
-                radius: 0.0,
-                fill_mode: FillMode::Full,
+impl Rule {
+    pub fn style_fn<'a>(self, theme: &data::Theme) -> impl Fn(&iced::Theme) -> rule::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme| match &self {
+            Rule::Divider => rule::Style {
+                color: alpha(t.hit, 0.05),
+                radius: 0.0.into(),
+                fill_mode: rule::FillMode::Full,
+                snap: true,
             },
         }
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum Scrollable {
     #[default]
-    Divider,
+    Default,
 }
 
-impl scrollable::StyleSheet for Theme {
-    type Style = Scrollable;
-
-    fn active(&self, _style: &Self::Style) -> scrollable::Scrollbar {
-        scrollable::Scrollbar {
-            background: None,
-            border_radius: 0.0,
-            border_width: 0.0,
-            border_color: self.theme.text,
-            scroller: scrollable::Scroller {
-                color: self.theme.error,
-                border_radius: 2.0,
-                border_width: 0.0,
-                border_color: self.theme.error,
-            },
+impl Scrollable {
+    pub fn style_fn<'a>(
+        self,
+        theme: &data::Theme,
+    ) -> impl Fn(&iced::Theme, scrollable::Status) -> scrollable::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme, _status: scrollable::Status| {
+            let rail = scrollable::Rail {
+                background: None,
+                border: Border {
+                    radius: 0.0.into(),
+                    width: 0.0,
+                    color: t.text,
+                },
+                scroller: scrollable::Scroller {
+                    background: t.error.into(),
+                    border: Border {
+                        radius: 2.0.into(),
+                        width: 0.0,
+                        color: t.error,
+                    },
+                },
+            };
+            scrollable::Style {
+                container: container::Style::default(),
+                vertical_rail: rail.clone(),
+                horizontal_rail: rail,
+                gap: None,
+                auto_scroll: scrollable::AutoScroll {
+                    background: Background::Color(Color::TRANSPARENT),
+                    border: Border::default(),
+                    shadow: iced::Shadow::default(),
+                    icon: t.text,
+                },
+            }
         }
     }
-
-    fn hovered(&self, style: &Self::Style) -> scrollable::Scrollbar {
-        self.active(style)
-    }
-
-    fn dragging(&self, style: &Self::Style) -> scrollable::Scrollbar {
-        self.active(style)
-    }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum TextInput {
     #[default]
     Default,
 }
 
-impl text_input::StyleSheet for Theme {
-    type Style = TextInput;
+impl TextInput {
+    pub fn style_fn<'a>(
+        self,
+        theme: &data::Theme,
+    ) -> impl Fn(&iced::Theme, text_input::Status) -> text_input::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme, status: text_input::Status| {
+            let active = text_input::Style {
+                background: Color::TRANSPARENT.into(),
+                border: Border {
+                    radius: 0.0.into(),
+                    width: 1.0,
+                    color: alpha(t.hit, 0.1),
+                },
+                icon: t.text,
+                placeholder: Color { a: 0.25, ..t.hit },
+                value: t.text,
+                selection: Color { a: 0.05, ..t.text },
+            };
 
-    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
-        text_input::Appearance {
-            background: Color::TRANSPARENT.into(),
-            border_radius: 0.0,
-            border_width: 1.0,
-            border_color: alpha(self.theme.hit, 0.1),
-        }
-    }
-
-    fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
-        text_input::Appearance {
-            background: alpha(self.theme.hit, 0.015).into(),
-            border_color: alpha(self.theme.hit, 0.1),
-            ..self.active(style)
-        }
-    }
-
-    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
-        text_input::Appearance {
-            background: alpha(self.theme.hit, 0.025).into(),
-            border_color: alpha(self.theme.hit, 0.25),
-            ..self.active(style)
-        }
-    }
-
-    fn placeholder_color(&self, _style: &Self::Style) -> Color {
-        Color {
-            a: 0.25,
-            ..self.theme.hit
-        }
-    }
-
-    fn value_color(&self, _style: &Self::Style) -> Color {
-        self.theme.text
-    }
-
-    fn selection_color(&self, _style: &Self::Style) -> Color {
-        Color {
-            a: 0.05,
-            ..self.theme.text
+            match status {
+                text_input::Status::Active => active,
+                text_input::Status::Hovered => text_input::Style {
+                    background: alpha(t.hit, 0.015).into(),
+                    border: Border {
+                        color: alpha(t.hit, 0.1),
+                        ..active.border
+                    },
+                    ..active
+                },
+                text_input::Status::Focused { .. } => text_input::Style {
+                    background: alpha(t.hit, 0.025).into(),
+                    border: Border {
+                        color: alpha(t.hit, 0.25),
+                        ..active.border
+                    },
+                    ..active
+                },
+                text_input::Status::Disabled => active,
+            }
         }
     }
 }
@@ -414,41 +475,42 @@ pub enum PickList {
     Default,
 }
 
-impl pick_list::StyleSheet for Theme {
-    type Style = PickList;
+impl PickList {
+    pub fn style_fn<'a>(
+        self,
+        theme: &data::Theme,
+    ) -> impl Fn(&iced::Theme, pick_list::Status) -> pick_list::Style + 'a {
+        let t = theme.clone();
+        move |_iced_theme: &iced::Theme, status: pick_list::Status| {
+            let active = pick_list::Style {
+                text_color: t.text,
+                placeholder_color: alpha(t.hit, 0.25),
+                handle_color: t.text,
+                background: t.bg.into(),
+                border: Border {
+                    radius: 0.0.into(),
+                    width: 1.0,
+                    color: alpha(t.text, 0.1),
+                },
+            };
 
-    fn active(&self, _style: &<Self as pick_list::StyleSheet>::Style) -> pick_list::Appearance {
-        pick_list::Appearance {
-            text_color: self.theme.text,
-            placeholder_color: alpha(self.theme.hit, 0.25),
-            handle_color: self.theme.text,
-            background: self.theme.bg.into(),
-            border_radius: 0.0,
-            border_width: 1.0,
-            border_color: alpha(self.theme.text, 0.1),
-        }
-    }
-
-    fn hovered(&self, style: &<Self as pick_list::StyleSheet>::Style) -> pick_list::Appearance {
-        pick_list::Appearance {
-            border_color: alpha(self.theme.text, 0.25),
-            ..self.active(style)
-        }
-    }
-}
-
-impl iced::overlay::menu::StyleSheet for Theme {
-    type Style = PickList;
-
-    fn appearance(&self, _style: &Self::Style) -> menu::Appearance {
-        menu::Appearance {
-            text_color: alpha(self.theme.text, 0.5),
-            background: self.theme.bg.into(),
-            border_width: 1.0,
-            border_radius: 0.0,
-            border_color: alpha(self.theme.text, 0.25),
-            selected_text_color: self.theme.text,
-            selected_background: alpha(self.theme.text, 0.05).into(),
+            match status {
+                pick_list::Status::Active => active,
+                pick_list::Status::Hovered => pick_list::Style {
+                    border: Border {
+                        color: alpha(t.text, 0.25),
+                        ..active.border
+                    },
+                    ..active
+                },
+                pick_list::Status::Opened { .. } => pick_list::Style {
+                    border: Border {
+                        color: alpha(t.text, 0.25),
+                        ..active.border
+                    },
+                    ..active
+                },
+            }
         }
     }
 }

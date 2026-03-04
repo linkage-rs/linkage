@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+
+use serde::{Deserialize, Serialize};
+
 use super::keyboard::Layout;
 use super::training::{Difficulty, Line, Session, State};
 use super::words;
 use super::zipper_list::{Item, ZipperList};
-use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, PartialOrd, Deserialize, Serialize)]
 pub struct Name(String);

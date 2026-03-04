@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 pub mod dictionary;
 pub mod keyboard;

@@ -1,5 +1,6 @@
-use super::CharSet;
 use serde::{Deserialize, Serialize};
+
+use super::CharSet;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
 pub enum Layout {

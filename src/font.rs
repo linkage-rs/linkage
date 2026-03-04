@@ -36,7 +36,7 @@ impl From<Font> for iced::Font {
             family: iced::font::Family::Name(font.name()),
             weight: font.weight(),
             stretch: iced::font::Stretch::Expanded,
-            monospaced: true,
+            style: iced::font::Style::Normal,
         }
     }
 }

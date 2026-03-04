@@ -1,8 +1,10 @@
-use super::CharSet;
-use rand::distributions::{Distribution, Uniform};
+use std::collections::HashMap;
+
+use rand::distr::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use serde::Deserialize;
-use std::collections::HashMap;
+
+use super::CharSet;
 
 const SCALAR: u16 = 10000;
 const EN_FREQ: &[u8] = include_bytes!("../../data/en/freq.json");
@@ -39,8 +41,8 @@ impl Random {
         Random {
             letter: cumulative(freq_data.letter),
             next_letter,
-            dist: Uniform::new_inclusive(0, SCALAR),
-            rng: rand::thread_rng(),
+            dist: Uniform::new_inclusive(0, SCALAR).unwrap(),
+            rng: rand::rng(),
         }
     }
 
@@ -106,8 +108,8 @@ impl Default for Random {
         Random {
             letter: Vec::new(),
             next_letter: HashMap::new(),
-            dist: Uniform::new_inclusive(0, SCALAR),
-            rng: rand::thread_rng(),
+            dist: Uniform::new_inclusive(0, SCALAR).unwrap(),
+            rng: rand::rng(),
         }
     }
 }

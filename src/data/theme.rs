@@ -1,5 +1,5 @@
 use iced::Color;
-use palette::{Mix, Srgb};
+use iced::theme::palette::mix;
 
 #[derive(Debug, Clone)]
 pub struct Theme {
@@ -117,15 +117,12 @@ impl Theme {
     /// Between 0.5 and 1.0, return a blend from text -> target
     pub fn metric(&self, value: f32) -> Color {
         let value = value.min(1.0).max(0.0);
-        let text = Srgb::from(self.text).into_linear();
         if value < 0.5 {
             let pct = value / 0.5;
-            let error = Srgb::from(self.error).into_linear();
-            Srgb::from_linear(error.mix(&text, pct)).into()
+            mix(self.error, self.text, pct)
         } else {
             let pct = (value - 0.5) / 0.5;
-            let target = Srgb::from(self.target).into_linear();
-            Srgb::from_linear(text.mix(&target, pct)).into()
+            mix(self.text, self.target, pct)
         }
     }
 }

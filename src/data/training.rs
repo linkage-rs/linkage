@@ -1,11 +1,13 @@
-use super::keyboard::Layout;
-use super::words::{self, Words};
-use super::CharSet;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::time::{Duration, Instant};
+
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use statrs::statistics::{self, Distribution, Statistics};
-use std::collections::{HashMap, HashSet, VecDeque};
-use time::{Duration, Instant, OffsetDateTime};
+
+use super::CharSet;
+use super::keyboard::Layout;
+use super::words::{self, Words};
 
 pub const CHARS_PER_LINE: usize = 52;
 pub const NEXT_LINES: usize = 1;
@@ -50,10 +52,10 @@ pub struct Stats {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Event {
     /// New letter added to our training set
-    Unlock { letter: char, time: OffsetDateTime },
+    Unlock { letter: char, time: u64 },
     // /// Computed progress point
     // Progress {
-    //     time: OffsetDateTime,
+    //     time: u64,
     //     total_time_training: Duration,
     //     total_lines_typed: u64,
     //     total_characters_typed: u64,
@@ -88,7 +90,7 @@ pub struct Session {
 pub struct Line {
     hits: Vec<Hit>,
     #[allow(dead_code)]
-    time: OffsetDateTime,
+    time: u64,
 }
 
 /// A successful keystroke
@@ -133,7 +135,7 @@ impl State {
         let unclean: CharSet = self
             .clean
             .iter()
-            .filter(|(_, &pct)| pct < MIN_CLEAN_PCT)
+            .filter(|(_, pct)| **pct < MIN_CLEAN_PCT)
             .sorted_by_key(|(_, v)| (*v * 1000.0).round() as u16)
             .map(|(ch, _)| ch)
             .cloned()
@@ -221,7 +223,7 @@ impl State {
 
 impl From<Duration> for WordsPerMinute {
     fn from(duration: Duration) -> Self {
-        let seconds_per_character = duration.as_seconds_f64();
+        let seconds_per_character = duration.as_secs_f64();
         let characters_per_minute = 60.0 / seconds_per_character;
         let words_per_minute = characters_per_minute / CHARACTERS_PER_WORD;
         Self(round(words_per_minute, 2))
@@ -237,6 +239,12 @@ impl From<f64> for WordsPerMinute {
 impl From<WordsPerMinute> for f64 {
     fn from(wpm: WordsPerMinute) -> f64 {
         wpm.0
+    }
+}
+
+impl From<WordsPerMinute> for f32 {
+    fn from(wpm: WordsPerMinute) -> f32 {
+        wpm.0 as f32
     }
 }
 
@@ -291,7 +299,7 @@ impl Event {
     fn unlock(letter: char) -> Self {
         Self::Unlock {
             letter,
-            time: OffsetDateTime::now_utc(),
+            time: now_utc(),
         }
     }
 }
@@ -332,7 +340,7 @@ impl Session {
             } else {
                 let line = Line {
                     hits: self.hits.clone(),
-                    time: OffsetDateTime::now_utc(),
+                    time: now_utc(),
                 };
                 self.hits.clear();
 
@@ -382,14 +390,14 @@ impl Session {
 }
 
 impl Hit {
-    pub const MAX_DURATION_NS: i64 = 5_000_000_000;
+    pub const MAX_DURATION_NS: u128 = 5_000_000_000;
 
     pub fn new(target: char, prev: char) -> Self {
         Self {
             target,
             prev,
             misses: HashSet::with_capacity(4),
-            dt: Duration::zero(),
+            dt: Duration::ZERO,
         }
     }
 
@@ -403,8 +411,8 @@ impl Hit {
 
     pub fn finalize(&mut self, baseline: Instant) {
         self.dt = baseline.elapsed();
-        if self.dt.whole_nanoseconds() > Self::MAX_DURATION_NS as i128 {
-            self.dt = Duration::nanoseconds(Self::MAX_DURATION_NS);
+        if self.dt.as_nanos() > Self::MAX_DURATION_NS {
+            self.dt = Duration::from_nanos_u128(Self::MAX_DURATION_NS);
         }
     }
 
@@ -447,4 +455,13 @@ impl TriplePoint {
 fn round(n: f64, places: i32) -> f64 {
     let factor = 10.0_f64.powi(places);
     (n * factor).round() / factor
+}
+
+/// Number of seconds since the UNIX epoch
+fn now_utc() -> u64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |t| t.as_secs())
 }

@@ -1,9 +1,8 @@
-use crate::data;
-use crate::data::profile;
-use crate::data::Theme;
-use crate::Element;
-
+use iced::Element;
 use iced::widget::text;
+
+use crate::data;
+use crate::data::{Theme, profile};
 
 #[derive(Debug, Default)]
 pub struct State {}
@@ -30,7 +29,7 @@ impl State {
         Self {}
     }
 
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         text("Loading").into()
     }
 

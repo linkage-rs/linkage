@@ -1,8 +1,6 @@
-use crate::data::profile;
-use crate::data::Theme;
-use crate::Element;
+use iced::{Element, Subscription};
 
-use iced::Subscription;
+use crate::data::{Theme, profile};
 
 pub mod loading;
 mod settings;
@@ -78,7 +76,7 @@ impl Screen {
             }
             Screen::Training(state) => {
                 if let Message::Training(message) = message {
-                    if let Some((_command, event)) = state.update(profiles, message) {
+                    if let Some(event) = state.update(profiles, message) {
                         match event {
                             training::Event::Save => {
                                 return Some(Event::Save);
@@ -111,7 +109,7 @@ impl Screen {
         None
     }
 
-    pub fn view(&self, profiles: &profile::List) -> Element<Message> {
+    pub fn view(&self, profiles: &profile::List) -> Element<'_, Message> {
         match self {
             Screen::Loading(loading) => loading.view().map(Message::Loading),
             Screen::Settings(state) => state.view(profiles).map(Message::Settings),
