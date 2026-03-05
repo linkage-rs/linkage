@@ -1,116 +1,121 @@
-use iced::Color;
-use iced::theme::palette::mix;
+use iced::theme::palette::{Extended, mix};
+use iced::theme::{Base, Mode, Palette, Style};
+use iced::{Color, color};
+
+/// List all the themes available in the app
+pub fn all() -> Vec<Theme> {
+    let built_ins = iced::Theme::ALL.iter().cloned().map(Theme::from);
+    let linkage = Theme::ALL.iter().cloned();
+    let mut all: Vec<Theme> = built_ins.chain(linkage).collect();
+
+    all.sort_by(|a, b| {
+        a.palette()
+            .background
+            .relative_luminance()
+            .partial_cmp(&b.palette().background.relative_luminance())
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    all
+}
 
 #[derive(Debug, Clone)]
-pub struct Theme {
-    pub name: &'static str,
-    pub bg: Color,
-    pub text: Color,
-    pub target: Color,
-    pub hit: Color,
-    pub miss: Color,
-    pub error: Color,
+pub enum Theme {
+    Ayu,
+    Monokai,
+    NordLight,
+    OneDark,
+    /// An Iced built-in theme
+    BuiltIn(iced::Theme),
 }
 
 impl Theme {
-    pub fn all() -> Vec<Self> {
-        vec![
-            Self::ayu(),
-            Self::dracula(),
-            Self::monokai(),
-            Self::nord(),
-            Self::nord_light(),
-            Self::one_dark(),
-            Self::tokyo_night(),
-        ]
+    const ALL: &'static [Self] = &[Self::Ayu, Self::Monokai, Self::NordLight, Self::OneDark];
+
+    pub fn name(&self) -> &str {
+        match self {
+            Theme::Ayu => "Ayu",
+            Theme::Monokai => "Monokai",
+            Theme::NordLight => "Nord Light",
+            Theme::OneDark => "One Dark",
+            Theme::BuiltIn(theme) => theme.name(),
+        }
     }
 
     pub fn from_name(name: &str) -> Option<Self> {
-        Self::all().iter().find(|&item| item.name == name).cloned()
+        all().iter().find(|&item| item.name() == name).cloned()
     }
 
-    pub fn monokai() -> Self {
-        Self {
-            name: "Monokai",
-            bg: Color::from_rgba8(0x27, 0x28, 0x22, 1.0),
-            text: Color::from_rgba8(0xf8, 0xf8, 0xf2, 1.0),
-            target: Color::from_rgba8(0xa6, 0xe2, 0x2e, 1.0),
-            hit: Color::from_rgba8(0xcf, 0xcf, 0xc2, 1.0),
-            miss: Color::from_rgba8(0xfd, 0x97, 0x1f, 1.0),
-            error: Color::from_rgba8(0xf9, 0x26, 0x72, 1.0),
+    /// Color of the background
+    pub fn background(&self) -> Color {
+        self.palette().background
+    }
+
+    /// Color of the foreground text
+    pub fn text(&self) -> Color {
+        self.palette().text
+    }
+
+    /// Color of the target proficiency rate
+    pub fn target(&self) -> Color {
+        self.palette().success
+    }
+
+    /// Color of a typed character
+    pub fn hit(&self) -> Color {
+        self.extended_palette().background.strongest.text
+    }
+
+    /// Color of a missed a character
+    pub fn miss(&self) -> Color {
+        self.palette().warning
+    }
+
+    /// Color of an error
+    pub fn error(&self) -> Color {
+        self.palette().danger
+    }
+
+    pub fn palette(&self) -> Palette {
+        match self {
+            Theme::Ayu => Palette {
+                background: color!(0x0a0e14),
+                text: color!(0xb3b1ad),
+                primary: color!(0x4d5566),
+                success: color!(0xc2d94c),
+                warning: color!(0xffb454),
+                danger: color!(0xf07178),
+            },
+            Theme::Monokai => Palette {
+                background: color!(0x272822),
+                text: color!(0xf8f8f2),
+                primary: color!(0xcfcfc2),
+                success: color!(0xa6e22e),
+                warning: color!(0xfd971f),
+                danger: color!(0xf92672),
+            },
+            Theme::NordLight => Palette {
+                background: color!(0xeceff4),
+                text: color!(0x2e3440),
+                primary: color!(0x3b4252),
+                success: color!(0x88c0d0),
+                warning: color!(0xebcb8b),
+                danger: color!(0xbf616a),
+            },
+            Theme::OneDark => Palette {
+                background: color!(0x282c34),
+                text: color!(0xabb2bf),
+                primary: color!(0x5c6370),
+                success: color!(0x98c379),
+                warning: color!(0xd19a66),
+                danger: color!(0xbe5046),
+            },
+            Theme::BuiltIn(theme) => theme.palette(),
         }
     }
 
-    pub fn ayu() -> Self {
-        Self {
-            name: "Ayu",
-            bg: Color::from_rgba8(0x0A, 0x0E, 0x14, 1.0),
-            text: Color::from_rgba8(0xB3, 0xB1, 0xAD, 1.0),
-            target: Color::from_rgba8(0xc2, 0xd9, 0x4c, 1.0),
-            hit: Color::from_rgba8(0x4D, 0x55, 0x66, 1.0),
-            miss: Color::from_rgba8(0xFF, 0xB4, 0x54, 1.0),
-            error: Color::from_rgba8(0xF0, 0x71, 0x78, 1.0),
-        }
-    }
-
-    pub fn tokyo_night() -> Self {
-        Self {
-            name: "Tokyo Night",
-            bg: Color::from_rgba8(0x1A, 0x1B, 0x26, 1.0),
-            text: Color::from_rgba8(0xC0, 0xCA, 0xF5, 1.0),
-            target: Color::from_rgba8(0x9E, 0xCE, 0x6A, 1.0),
-            hit: Color::from_rgba8(0x56, 0x5F, 0x89, 1.0),
-            miss: Color::from_rgba8(0xFF, 0x9E, 0x64, 1.0),
-            error: Color::from_rgba8(0xF7, 0x76, 0x8E, 1.0),
-        }
-    }
-
-    pub fn one_dark() -> Self {
-        Self {
-            name: "One Dark",
-            bg: Color::from_rgba8(0x28, 0x2C, 0x34, 1.0),
-            text: Color::from_rgba8(0xAB, 0xB2, 0xBF, 1.0),
-            target: Color::from_rgba8(0x98, 0xC3, 0x79, 1.0),
-            hit: Color::from_rgba8(0x5C, 0x63, 0x70, 1.0),
-            miss: Color::from_rgba8(0xD1, 0x9A, 0x66, 1.0),
-            error: Color::from_rgba8(0xBE, 0x50, 0x46, 1.0),
-        }
-    }
-
-    pub fn dracula() -> Self {
-        Self {
-            name: "Dracula",
-            bg: Color::from_rgba8(0x28, 0x2A, 0x36, 1.0),
-            text: Color::from_rgba8(0xF8, 0xF8, 0xF2, 1.0),
-            target: Color::from_rgba8(0xBD, 0x93, 0xF9, 1.0),
-            hit: Color::from_rgba8(0x44, 0x47, 0x5A, 1.0),
-            miss: Color::from_rgba8(0xFF, 0xB8, 0x6C, 1.0),
-            error: Color::from_rgba8(0xFF, 0x55, 0x55, 1.0),
-        }
-    }
-
-    pub fn nord() -> Self {
-        Self {
-            name: "Nord",
-            bg: Color::from_rgba8(0x2e, 0x34, 0x40, 1.0),
-            text: Color::from_rgba8(0xEC, 0xEF, 0xF4, 1.0),
-            target: Color::from_rgba8(0x88, 0xC0, 0xD0, 1.0),
-            hit: Color::from_rgba8(0xD8, 0xDE, 0xE9, 1.0),
-            miss: Color::from_rgba8(0xEB, 0xCB, 0x8B, 1.0),
-            error: Color::from_rgba8(0xBF, 0x61, 0x6A, 1.0),
-        }
-    }
-
-    pub fn nord_light() -> Self {
-        Self {
-            name: "Nord Light",
-            bg: Color::from_rgba8(0xEC, 0xEF, 0xF4, 1.0),
-            text: Color::from_rgba8(0x2e, 0x34, 0x40, 1.0),
-            target: Color::from_rgba8(0x88, 0xC0, 0xD0, 1.0),
-            hit: Color::from_rgba8(0x3B, 0x42, 0x52, 1.0),
-            miss: Color::from_rgba8(0xEB, 0xCB, 0x8B, 1.0),
-            error: Color::from_rgba8(0xBF, 0x61, 0x6A, 1.0),
-        }
+    pub fn extended_palette(&self) -> Extended {
+        Extended::generate(self.palette())
     }
 
     /// Between 0.0 and 0.5, return a blend from error -> text
@@ -119,20 +124,72 @@ impl Theme {
         let value = value.min(1.0).max(0.0);
         if value < 0.5 {
             let pct = value / 0.5;
-            mix(self.error, self.text, pct)
+            mix(self.palette().danger, self.palette().text, pct)
         } else {
             let pct = (value - 0.5) / 0.5;
-            mix(self.text, self.target, pct)
+            mix(self.palette().text, self.palette().success, pct)
         }
     }
 }
 
-pub fn alpha(color: Color, alpha: f32) -> Color {
-    Color { a: alpha, ..color }
-}
-
 impl Default for Theme {
     fn default() -> Self {
-        Theme::monokai()
+        Theme::Monokai
     }
 }
+
+impl Base for Theme {
+    fn default(preference: Mode) -> Self {
+        match preference {
+            Mode::None | Mode::Dark => Theme::Monokai,
+            Mode::Light => Theme::NordLight,
+        }
+    }
+
+    fn mode(&self) -> Mode {
+        let palette = self.extended_palette();
+        if palette.is_dark {
+            Mode::Dark
+        } else {
+            Mode::Light
+        }
+    }
+
+    fn base(&self) -> Style {
+        let palette = self.palette();
+        Style {
+            background_color: palette.background,
+            text_color: palette.text,
+        }
+    }
+
+    fn palette(&self) -> Option<Palette> {
+        Some(Theme::palette(self))
+    }
+
+    fn name(&self) -> &str {
+        Theme::name(self)
+    }
+}
+
+impl From<Theme> for iced::Theme {
+    fn from(theme: Theme) -> Self {
+        if let Theme::BuiltIn(theme) = theme {
+            theme
+        } else {
+            iced::Theme::custom(theme.name().to_string(), theme.palette())
+        }
+    }
+}
+
+impl From<iced::Theme> for Theme {
+    fn from(theme: iced::Theme) -> Self {
+        Self::BuiltIn(theme)
+    }
+}
+
+// impl From<Option<Theme>> for Option<iced::Theme> {
+//     fn from(maybe_theme: Option<Theme>) -> Self {
+//         maybe_theme.map(iced::Theme::from)
+//     }
+// }

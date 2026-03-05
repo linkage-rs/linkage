@@ -1,12 +1,12 @@
 use iced::keyboard::key::Named;
 use iced::keyboard::{self, Key};
 use iced::widget::{Space, button, column, container, row, text};
-use iced::{Alignment, Element, Length, Padding, Subscription, alignment};
+use iced::{Alignment, Length, Subscription, alignment, padding};
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::data::profile;
 use crate::data::training::{CHARS_PER_LINE, Difficulty, MAX_ERRORS, MIN_CLEAN_PCT, TriplePoint};
-use crate::font;
+use crate::{Element, font, style};
 
 #[derive(Debug)]
 pub struct State {
@@ -66,7 +66,7 @@ impl State {
                     .width(CHAR_WIDTH)
                     .font(iced::Font::from(font::Font::Thin));
                 if hit.is_dirty() {
-                    t = t.style(text::warning);
+                    t = t.class(style::Text::Miss);
                 }
                 t.into()
             })
@@ -86,7 +86,7 @@ impl State {
                                 text(c.to_string())
                                     .width(CHAR_WIDTH)
                                     .font(iced::Font::from(font::Font::Medium))
-                                    .style(text::danger)
+                                    .class(style::Text::Error)
                                     .into()
                             }
                             EitherOrBoth::Right(t) => text(t.to_string()).width(CHAR_WIDTH).into(),
@@ -104,7 +104,7 @@ impl State {
                     .width(CHAR_WIDTH)
                     .height(LINE_SPACE)
                     .align_y(alignment::Vertical::Center)
-                    .style(text::success),
+                    .class(style::Text::Target),
             ]
             .into()
         } else {
@@ -136,8 +136,7 @@ impl State {
             0
         };
 
-        let training =
-            column![content_active, content_next].padding(Padding::ZERO.right(error_pad));
+        let training = column![content_active, content_next].padding(padding::right(error_pad));
         let training = container(training)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -158,17 +157,7 @@ impl State {
                         .font(iced::Font::from(font::Font::Light))
                         .size(12),
                     text("\u{25a0}")
-                        .style(move |theme: &iced::Theme| {
-                            let palette = theme.palette();
-                            let color = if accuracy_val < 0.5 {
-                                let pct = accuracy_val / 0.5;
-                                interpolate_color(palette.danger, palette.text, pct)
-                            } else {
-                                let pct = (accuracy_val - 0.5) / 0.5;
-                                interpolate_color(palette.text, palette.success, pct)
-                            };
-                            text::Style { color: Some(color) }
-                        })
+                        .class(style::Text::Metric(accuracy_val))
                         .font(iced::Font::from(font::Font::Light))
                         .size(16),
                 ]
@@ -180,17 +169,7 @@ impl State {
                     let wpm_metric_value = self.wpm_metric.value(wpm);
                     r = r.push(
                         text("\u{25a0}")
-                            .style(move |theme: &iced::Theme| {
-                                let palette = theme.palette();
-                                let color = if wpm_metric_value < 0.5 {
-                                    let pct = wpm_metric_value / 0.5;
-                                    interpolate_color(palette.danger, palette.text, pct)
-                                } else {
-                                    let pct = (wpm_metric_value - 0.5) / 0.5;
-                                    interpolate_color(palette.text, palette.success, pct)
-                                };
-                                text::Style { color: Some(color) }
-                            })
+                            .class(style::Text::Metric(wpm_metric_value))
                             .font(iced::Font::from(font::Font::Light))
                             .size(16),
                     )
@@ -218,7 +197,7 @@ impl State {
 
         let settings_button = button(settings_button_content)
             .on_press(Message::UserButtonPressed)
-            .style(button::text)
+            .class(style::Button::Text)
             .padding(10);
 
         let footer = row![Space::new().width(Length::Fill), settings_button];
@@ -303,13 +282,4 @@ pub fn subscription() -> Subscription<Message> {
             _ => None,
         }
     })
-}
-
-fn interpolate_color(a: iced::Color, b: iced::Color, pct: f32) -> iced::Color {
-    iced::Color {
-        r: a.r + (b.r - a.r) * pct,
-        g: a.g + (b.g - a.g) * pct,
-        b: a.b + (b.b - a.b) * pct,
-        a: a.a + (b.a - a.a) * pct,
-    }
 }

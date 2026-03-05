@@ -1,5 +1,6 @@
-use iced::{Element, Subscription};
+use iced::Subscription;
 
+use crate::Element;
 use crate::data::{Theme, profile};
 
 pub mod loading;
@@ -55,7 +56,7 @@ impl Screen {
         &mut self,
         profiles: &mut profile::List,
         message: Message,
-        active: &'static str,
+        active: &str,
     ) -> Option<Event> {
         match self {
             Screen::Loading(state) => {

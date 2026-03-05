@@ -1,8 +1,7 @@
-use iced::Element;
 use iced::widget::text;
 
-use crate::data;
 use crate::data::{Theme, profile};
+use crate::{Element, data};
 
 #[derive(Debug, Default)]
 pub struct State {}

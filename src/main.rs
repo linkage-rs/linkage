@@ -1,8 +1,8 @@
 use iced::widget::container;
-use iced::{Element, Length, Size, Subscription, Task, keyboard, window};
-use linkage::data::{self, profile};
+use iced::{Length, Size, Subscription, Task, keyboard, window};
+use linkage::data::{self, Theme, profile};
 use linkage::screen::{self, Screen};
-use linkage::{font, style};
+use linkage::{Element, font, style};
 
 pub fn main() -> iced::Result {
     iced::application(Linkage::new, Linkage::update, Linkage::view)
@@ -17,7 +17,7 @@ pub fn main() -> iced::Result {
 #[derive(Debug)]
 struct Linkage {
     screen: Screen,
-    theme: style::Theme,
+    theme: Theme,
     profiles: profile::List,
 }
 
@@ -73,7 +73,7 @@ impl Linkage {
                         screen::Event::ExitRequested => self.prepare_close(),
                         screen::Event::Save => self.save(),
                         screen::Event::SelectTheme(new_theme) => {
-                            *theme = style::Theme::new(new_theme);
+                            *theme = new_theme;
                             self.save()
                         }
                     }
@@ -89,14 +89,13 @@ impl Linkage {
             screen, profiles, ..
         } = self;
         let content = screen.view(profiles).map(Message::Screen);
-        let theme_data = self.theme.data().clone();
 
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .center_x(Length::Fill)
             .center_y(Length::Fill)
-            .style(style::Container::Primary.style_fn(&theme_data))
+            .class(style::Container::Primary)
             .into()
     }
 
@@ -108,19 +107,8 @@ impl Linkage {
         ])
     }
 
-    fn theme(&self) -> iced::Theme {
-        // We use the built-in theme as a base but override via style closures
-        iced::Theme::custom(
-            "Linkage".to_string(),
-            iced::theme::Palette {
-                background: self.theme.data().bg,
-                text: self.theme.data().text,
-                primary: self.theme.data().target,
-                success: self.theme.data().target,
-                danger: self.theme.data().error,
-                warning: self.theme.data().miss,
-            },
-        )
+    fn theme(&self) -> Theme {
+        self.theme.clone()
     }
 
     fn handle_keyboard_event(&mut self, event: keyboard::Event) -> Task<Message> {

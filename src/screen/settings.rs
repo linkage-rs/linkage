@@ -1,7 +1,8 @@
+use iced::Length;
 use iced::widget::{Column, Row, button, column, container, rule, scrollable, text};
-use iced::{Element, Length};
 
 use crate::data::{self, Theme};
+use crate::{Element, style};
 
 mod profile;
 mod theme;
@@ -43,7 +44,7 @@ impl State {
         &mut self,
         profiles: &mut data::profile::List,
         message: Message,
-        active: &'static str,
+        active: &str,
     ) -> Option<Event> {
         let State { screen, .. } = self;
         match message {
@@ -83,7 +84,7 @@ impl State {
 
         let back_button = button(text("\u{2190} Back").size(14))
             .on_press(Message::BackButtonPressed)
-            .style(button::text)
+            .class(style::Button::Text)
             .padding(10);
 
         let menu_items = vec![
@@ -110,16 +111,15 @@ impl State {
                     } = item;
                     let label_text = container(text(label).size(14))
                         .padding(6)
-                        .center_x(Length::Fill)
                         .center_y(Length::Fill);
                     if is_active {
                         container(label_text)
-                            .style(container::rounded_box)
+                            .class(style::Container::RoundedBox)
                             .width(Length::Fill)
                             .into()
                     } else {
                         button(label_text)
-                            .style(button::text)
+                            .class(style::Button::Text)
                             .width(Length::Fill)
                             .on_press(message)
                             .padding(0)
@@ -161,7 +161,7 @@ impl Screen {
         Screen::Profile(profile::State::new())
     }
 
-    fn theme(active: &'static str) -> Self {
+    fn theme(active: &str) -> Self {
         Screen::Theme(theme::State::new(active))
     }
 

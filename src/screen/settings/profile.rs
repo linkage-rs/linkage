@@ -1,12 +1,12 @@
 use iced::widget::{
     Column, Row, button, column, container, pick_list, row, rule, scrollable, text, text_input,
 };
-use iced::{Element, Length, Padding};
+use iced::{Length, padding};
 
 use crate::data::keyboard::{self, Layout};
 use crate::data::profile;
 use crate::data::training::Difficulty;
-use crate::font;
+use crate::{Element, font, style};
 
 #[derive(Debug)]
 pub struct State {
@@ -181,12 +181,12 @@ impl Menu {
                         .center_y(Length::Fill);
                     if is_active {
                         container(label)
-                            .style(iced::widget::container::rounded_box)
+                            .class(style::Container::RoundedBox)
                             .width(Length::Fill)
                             .into()
                     } else {
                         button(label)
-                            .style(button::text)
+                            .class(style::Button::Text)
                             .on_press(Message::ProfilePressed(i))
                             .width(Length::Fill)
                             .padding(0)
@@ -198,7 +198,7 @@ impl Menu {
         .width(Length::Fill);
 
         let new_button = button(text("+ New Profile").size(14))
-            .style(button::text)
+            .class(style::Button::Text)
             .on_press(Message::NewProfilePressed)
             .width(Length::Fill);
 
@@ -262,13 +262,14 @@ impl Screen {
                         .text_size(15);
                 let difficulty_section = column![difficulty_title, difficulty_pick_list].spacing(5);
 
-                let mut accept = button(centered_text("\u{2714}", 24, 20)).style(button::success);
+                let mut accept =
+                    button(centered_text("\u{2714}", 24, 20)).class(style::Button::Accept);
                 if name_parsed.is_some() && layout.is_some() {
                     accept = accept.on_press(Message::CreateAccept);
                 }
 
                 let cancel = button(centered_text("\u{2716}", 24, 20))
-                    .style(button::danger)
+                    .class(style::Button::Reject)
                     .on_press(Message::CreateCancel);
 
                 let button_row = row![accept, cancel].spacing(5);
@@ -284,12 +285,14 @@ impl Screen {
                 name_value,
             } => {
                 let mut name_input = text_input("Profile Name", name_value)
+                    .class(style::TextInput)
                     .on_input(Message::NameInput)
                     .width(Length::Fill)
                     .padding(6)
                     .size(18);
 
-                let mut accept = button(centered_text("\u{2714}", 24, 20)).style(button::success);
+                let mut accept =
+                    button(centered_text("\u{2714}", 24, 20)).class(style::Button::Accept);
 
                 if name_parsed.is_some() {
                     name_input = name_input.on_submit(Message::RenameAccept);
@@ -297,7 +300,7 @@ impl Screen {
                 }
 
                 let cancel = button(centered_text("\u{2716}", 24, 20))
-                    .style(button::danger)
+                    .class(style::Button::Reject)
                     .on_press(Message::RenameCancel);
 
                 let name_row = row![name_input, accept, cancel].spacing(5);
@@ -306,7 +309,7 @@ impl Screen {
             }
             Screen::View => {
                 let rename_button = button(text(profiles.active().name.to_string()).size(18))
-                    .style(button::text)
+                    .class(style::Button::Text)
                     .on_press(Message::RenamePressed)
                     .padding(6);
 
@@ -315,7 +318,7 @@ impl Screen {
                     .font(iced::Font::from(font::Font::Thin));
                 let layout_name = text(profiles.active().layout.to_string()).size(16);
                 let layout_section = column![layout_title, layout_name]
-                    .padding(Padding::ZERO.left(6.0))
+                    .padding(padding::left(6))
                     .spacing(5);
 
                 let difficulty_title = text("Difficulty")
@@ -326,9 +329,10 @@ impl Screen {
                     Some(profiles.active().difficulty),
                     Message::DifficultyChanged,
                 )
+                .class(style::PickList)
                 .text_size(15);
                 let difficulty_section = column![difficulty_title, difficulty_pick_list]
-                    .padding(Padding::ZERO.left(6.0))
+                    .padding(padding::left(6))
                     .spacing(5);
 
                 content = content
@@ -346,8 +350,6 @@ fn centered_text(s: &str, size: u16, side: u16) -> Element<'_, Message> {
     let side_f = side as f32;
     let size_f = size as f32;
     container(text(s.to_string()).size(size_f))
-        .width(side_f)
-        .height(side_f)
         .center_x(side_f)
         .center_y(side_f)
         .into()

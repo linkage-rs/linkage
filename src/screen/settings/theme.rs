@@ -1,12 +1,13 @@
 use iced::widget::{Space, button, column, container, row, scrollable, text};
-use iced::{Alignment, Element, Length, Padding};
+use iced::{Alignment, Length, padding};
 
 use crate::data::Theme;
+use crate::{Element, style};
 
 #[derive(Debug)]
 pub struct State {
     themes: Vec<Theme>,
-    active: &'static str,
+    active: String,
 }
 
 #[derive(Debug, Clone)]
@@ -19,17 +20,20 @@ pub enum Event {
 }
 
 impl State {
-    pub fn new(active: &'static str) -> Self {
-        let themes = Theme::all();
+    pub fn new(active: &str) -> Self {
+        let themes = crate::data::theme::all();
 
-        Self { themes, active }
+        Self {
+            themes,
+            active: active.to_string(),
+        }
     }
 
     pub fn update(&mut self, message: Message) -> Option<Event> {
         match message {
             Message::ThemePressed(index) => {
                 if let Some(theme) = self.themes.get(index) {
-                    self.active = theme.name;
+                    self.active = theme.name().to_string();
                     return Some(Event::SelectTheme(theme.clone()));
                 }
             }
@@ -44,112 +48,52 @@ impl State {
             self.themes
                 .iter()
                 .enumerate()
-                .map(|(i, th)| {
-                    let target_color = th.target;
-                    let miss_color = th.miss;
-                    let error_color = th.error;
-                    let text_color = th.text;
-                    let bg_color = th.bg;
+                .map(|(i, theme)| {
+                    let palette = theme.palette();
+
+                    let target_color = palette.success;
+                    let miss_color = palette.warning;
+                    let error_color = palette.danger;
+                    let text_color = palette.text;
 
                     let mut content = row![
-                        text("\u{25a0}").size(18).color(target_color),
-                        text("\u{25a0}").size(18).color(miss_color),
-                        text("\u{25a0}").size(18).color(error_color),
-                        text(th.name).size(16).color(text_color),
+                        text("\u{25a0}")
+                            .size(18)
+                            .class(style::Text::Override(target_color)),
+                        text("\u{25a0}")
+                            .size(18)
+                            .class(style::Text::Override(miss_color)),
+                        text("\u{25a0}")
+                            .size(18)
+                            .class(style::Text::Override(error_color)),
+                        text(theme.name())
+                            .size(16)
+                            .class(style::Text::Override(text_color)),
                     ]
                     .spacing(5)
                     .align_y(Alignment::Center);
 
-                    if self.active == th.name {
+                    if self.active == theme.name() {
                         content = content
                             .push(Space::new().width(Length::Fill))
                             .push(text("\u{25cf}").size(18));
                     }
 
-                    let bg = bg_color;
                     container(
                         button(content)
                             .on_press(Message::ThemePressed(i))
-                            .style(move |_theme: &iced::Theme, status| {
-                                let base = iced::widget::button::Style {
-                                    border: iced::Border {
-                                        radius: 2.0.into(),
-                                        width: 1.0,
-                                        color: iced::Color {
-                                            a: 0.15,
-                                            ..text_color
-                                        },
-                                    },
-                                    text_color: iced::Color {
-                                        a: 0.75,
-                                        ..text_color
-                                    },
-                                    ..iced::widget::button::Style::default()
-                                };
-                                match status {
-                                    iced::widget::button::Status::Active => base,
-                                    iced::widget::button::Status::Hovered => {
-                                        iced::widget::button::Style {
-                                            background: Some(
-                                                iced::Color {
-                                                    a: 0.025,
-                                                    ..text_color
-                                                }
-                                                .into(),
-                                            ),
-                                            border: iced::Border {
-                                                color: iced::Color {
-                                                    a: 0.5,
-                                                    ..text_color
-                                                },
-                                                ..base.border
-                                            },
-                                            text_color: text_color,
-                                            ..base
-                                        }
-                                    }
-                                    iced::widget::button::Status::Pressed => {
-                                        iced::widget::button::Style {
-                                            background: Some(
-                                                iced::Color {
-                                                    a: 0.015,
-                                                    ..text_color
-                                                }
-                                                .into(),
-                                            ),
-                                            border: iced::Border {
-                                                color: iced::Color {
-                                                    a: 0.4,
-                                                    ..text_color
-                                                },
-                                                ..base.border
-                                            },
-                                            text_color: iced::Color {
-                                                a: 0.6,
-                                                ..text_color
-                                            },
-                                            ..base
-                                        }
-                                    }
-                                    iced::widget::button::Status::Disabled => base,
-                                }
-                            })
+                            .class(style::Button::ThemePreview(theme.clone()))
                             .width(Length::Fill)
-                            .padding(Padding::ZERO.top(3.0).right(7.0).bottom(3.0).left(7.0)),
+                            .padding([3, 7]),
                     )
-                    .style(move |_theme: &iced::Theme| iced::widget::container::Style {
-                        text_color: Some(text_color),
-                        background: Some(bg.into()),
-                        ..Default::default()
-                    })
-                    .width(Length::Fill)
+                    .class(style::Container::theme_preview(theme))
                     .into()
                 })
                 .collect::<Vec<Element<Message>>>(),
         )
-        .width(225)
+        .width(275)
         .spacing(7)
-        .padding(Padding::ZERO.left(6.0));
+        .padding(padding::left(6));
 
         scrollable(
             column![title, buttons]
