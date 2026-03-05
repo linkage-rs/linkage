@@ -263,12 +263,12 @@ impl Screen {
                 let difficulty_section = column![difficulty_title, difficulty_pick_list].spacing(5);
 
                 let mut accept =
-                    button(centered_text("\u{2714}", 24, 20)).class(style::Button::Accept);
+                    button(centered_text("\u{2714}", 20, 26)).class(style::Button::Accept);
                 if name_parsed.is_some() && layout.is_some() {
                     accept = accept.on_press(Message::CreateAccept);
                 }
 
-                let cancel = button(centered_text("\u{2716}", 24, 20))
+                let cancel = button(centered_text("\u{2716}", 20, 26))
                     .class(style::Button::Reject)
                     .on_press(Message::CreateCancel);
 
@@ -292,14 +292,14 @@ impl Screen {
                     .size(18);
 
                 let mut accept =
-                    button(centered_text("\u{2714}", 24, 20)).class(style::Button::Accept);
+                    button(centered_text("\u{2714}", 20, 26)).class(style::Button::Accept);
 
                 if name_parsed.is_some() {
                     name_input = name_input.on_submit(Message::RenameAccept);
                     accept = accept.on_press(Message::RenameAccept);
                 }
 
-                let cancel = button(centered_text("\u{2716}", 24, 20))
+                let cancel = button(centered_text("\u{2716}", 20, 26))
                     .class(style::Button::Reject)
                     .on_press(Message::RenameCancel);
 
@@ -349,7 +349,7 @@ impl Screen {
 fn centered_text(s: &str, size: u16, side: u16) -> Element<'_, Message> {
     let side_f = side as f32;
     let size_f = size as f32;
-    container(text(s.to_string()).size(size_f))
+    container(text(s.to_string()).size(size_f).line_height(1.0).center())
         .center_x(side_f)
         .center_y(side_f)
         .into()

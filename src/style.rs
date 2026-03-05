@@ -419,7 +419,17 @@ impl Scrollable {
                 color: theme.text(),
             },
             scroller: scrollable::Scroller {
-                background: theme.error().into(),
+                background: match _status {
+                    scrollable::Status::Active { .. } => {
+                        theme.extended_palette().background.neutral.color.into()
+                    }
+                    scrollable::Status::Hovered { .. } => {
+                        theme.extended_palette().background.strongest.color.into()
+                    }
+                    scrollable::Status::Dragged { .. } => {
+                        theme.extended_palette().background.stronger.color.into()
+                    }
+                },
                 border: Border {
                     radius: 2.0.into(),
                     width: 0.0,
@@ -462,7 +472,7 @@ impl TextInput {
         let active = text_input::Style {
             background: Color::TRANSPARENT.into(),
             border: Border {
-                radius: 0.0.into(),
+                radius: 2.0.into(),
                 width: 1.0,
                 color: alpha(theme.hit(), 0.1),
             },
@@ -520,7 +530,7 @@ impl PickList {
             handle_color: theme.text(),
             background: theme.background().into(),
             border: Border {
-                radius: 0.0.into(),
+                radius: 2.0.into(),
                 width: 1.0,
                 color: alpha(theme.text(), 0.1),
             },
