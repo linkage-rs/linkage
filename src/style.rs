@@ -1,4 +1,6 @@
-use iced::widget::{button, container, overlay, pick_list, rule, scrollable, text, text_input};
+use iced::widget::{
+    button, container, overlay, pick_list, rule, scrollable, text, text_input, toggler,
+};
 use iced::{Background, Border, Color};
 
 use crate::data::Theme;
@@ -325,6 +327,7 @@ pub enum Container {
         fg: Color,
         bg: Background,
     },
+    Toast,
     #[default]
     Primary,
 }
@@ -358,6 +361,19 @@ impl Container {
                 background: Some(*bg),
                 ..Default::default()
             },
+            Container::Toast => {
+                let palette = theme.extended_palette();
+                container::Style {
+                    background: Some(alpha(palette.background.strong.color, 0.92).into()),
+                    text_color: Some(theme.error()),
+                    border: Border {
+                        radius: 4.0.into(),
+                        width: 1.0,
+                        color: alpha(theme.error(), 0.3),
+                    },
+                    ..Default::default()
+                }
+            }
             Container::Primary => container::Style::default(),
         }
     }
@@ -612,6 +628,88 @@ impl overlay::menu::Catalog for Theme {
         class: &<Self as iced::overlay::menu::Catalog>::Class<'_>,
     ) -> iced::overlay::menu::Style {
         class.style(&self)
+    }
+}
+
+#[derive(Clone)]
+pub struct Toggler;
+
+impl Toggler {
+    pub fn style(&self, theme: &Theme, status: toggler::Status) -> toggler::Style {
+        let palette = theme.palette();
+        let extended = theme.extended_palette();
+
+        match status {
+            toggler::Status::Active { is_toggled } => toggler::Style {
+                background: if is_toggled {
+                    alpha(palette.success, 0.6).into()
+                } else {
+                    alpha(extended.background.strong.color, 0.8).into()
+                },
+                background_border_width: 1.0,
+                background_border_color: if is_toggled {
+                    alpha(palette.success, 0.3)
+                } else {
+                    alpha(palette.text, 0.15)
+                },
+                foreground: if is_toggled {
+                    palette.background.into()
+                } else {
+                    alpha(palette.text, 0.5).into()
+                },
+                foreground_border_width: 0.0,
+                foreground_border_color: Color::TRANSPARENT,
+                text_color: None,
+                border_radius: None,
+                padding_ratio: 0.25,
+            },
+            toggler::Status::Hovered { is_toggled } => toggler::Style {
+                background: if is_toggled {
+                    alpha(palette.success, 0.75).into()
+                } else {
+                    alpha(extended.background.strong.color, 0.9).into()
+                },
+                background_border_width: 1.0,
+                background_border_color: if is_toggled {
+                    alpha(palette.success, 0.5)
+                } else {
+                    alpha(palette.text, 0.25)
+                },
+                foreground: if is_toggled {
+                    palette.background.into()
+                } else {
+                    alpha(palette.text, 0.7).into()
+                },
+                foreground_border_width: 0.0,
+                foreground_border_color: Color::TRANSPARENT,
+                text_color: None,
+                border_radius: None,
+                padding_ratio: 0.25,
+            },
+            toggler::Status::Disabled { .. } => toggler::Style {
+                background: alpha(extended.background.weak.color, 0.5).into(),
+                background_border_width: 1.0,
+                background_border_color: alpha(palette.text, 0.05),
+                foreground: alpha(palette.text, 0.15).into(),
+                foreground_border_width: 0.0,
+                foreground_border_color: Color::TRANSPARENT,
+                text_color: None,
+                border_radius: None,
+                padding_ratio: 0.25,
+            },
+        }
+    }
+}
+
+impl toggler::Catalog for Theme {
+    type Class<'a> = Toggler;
+
+    fn default<'a>() -> Self::Class<'a> {
+        Toggler
+    }
+
+    fn style(&self, class: &Self::Class<'_>, status: toggler::Status) -> toggler::Style {
+        class.style(self, status)
     }
 }
 

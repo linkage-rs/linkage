@@ -1,9 +1,10 @@
 use iced::Subscription;
 
 use crate::Element;
-use crate::data::{Theme, profile};
+use crate::data::{self, Theme, profile};
 
 pub mod loading;
+pub mod mini_keyboard;
 mod settings;
 pub mod training;
 
@@ -31,6 +32,7 @@ pub enum Event {
     ExitRequested,
     Save,
     SelectTheme(Theme),
+    Toast(String),
 }
 
 impl Screen {
@@ -57,7 +59,8 @@ impl Screen {
         profiles: &mut profile::List,
         message: Message,
         active: &str,
-    ) -> Option<Event> {
+    ) -> Vec<Event> {
+        let mut events = Vec::new();
         match self {
             Screen::Loading(state) => {
                 if let Message::Loading(message) = message {
@@ -66,10 +69,14 @@ impl Screen {
                             loading::Event::Load {
                                 profiles: loaded,
                                 theme,
+                                error,
                             } => {
                                 *profiles = loaded;
                                 *self = Screen::training(profiles);
-                                return Some(Event::SelectTheme(theme));
+                                events.push(Event::SelectTheme(theme));
+                                if let Some(err) = error {
+                                    events.push(Event::Toast(err));
+                                }
                             }
                         }
                     }
@@ -80,7 +87,7 @@ impl Screen {
                     if let Some(event) = state.update(profiles, message) {
                         match event {
                             training::Event::Save => {
-                                return Some(Event::Save);
+                                events.push(Event::Save);
                             }
                             training::Event::Settings => {
                                 *self = Screen::settings();
@@ -97,24 +104,24 @@ impl Screen {
                                 *self = Screen::training(profiles);
                             }
                             settings::Event::Save => {
-                                return Some(Event::Save);
+                                events.push(Event::Save);
                             }
                             settings::Event::SelectTheme(theme) => {
-                                return Some(Event::SelectTheme(theme));
+                                events.push(Event::SelectTheme(theme));
                             }
                         }
                     }
                 }
             }
         }
-        None
+        events
     }
 
-    pub fn view(&self, profiles: &profile::List) -> Element<'_, Message> {
+    pub fn view(&self, profiles: &profile::List, theme: &data::Theme) -> Element<'_, Message> {
         match self {
             Screen::Loading(loading) => loading.view().map(Message::Loading),
-            Screen::Settings(state) => state.view(profiles).map(Message::Settings),
-            Screen::Training(state) => state.view(profiles).map(Message::Training),
+            Screen::Settings(state) => state.view(profiles, theme).map(Message::Settings),
+            Screen::Training(state) => state.view(profiles, theme).map(Message::Training),
         }
     }
 

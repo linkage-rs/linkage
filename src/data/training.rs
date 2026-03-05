@@ -80,7 +80,7 @@ pub struct Session {
     /// The target characters we have yet to hit
     pub targets: VecDeque<char>,
     // The current errors, which must be cleared before moving forward
-    pub errors: Vec<char>,
+    pub errors: VecDeque<char>,
     /// The next few lines of target text
     pub next_lines: Vec<String>,
 }
@@ -324,7 +324,7 @@ impl Session {
             active_hit: Hit::new(first_letter, ' '),
             targets,
             hits: Vec::new(),
-            errors: Vec::new(),
+            errors: VecDeque::new(),
             next_lines,
         }
     }
@@ -348,10 +348,12 @@ impl Session {
             }
         } else {
             self.active_hit.add_miss(c);
-            if self.errors.len() == MAX_ERRORS {
-                self.errors.pop();
+            if self.errors.len() == MAX_ERRORS
+                || self.errors.len() + self.hits.len() == CHARS_PER_LINE
+            {
+                self.errors.pop_front();
             }
-            self.errors.push(c);
+            self.errors.push_back(c);
         }
 
         None
@@ -376,7 +378,7 @@ impl Session {
 
     pub fn backspace(&mut self) {
         if !self.errors.is_empty() {
-            self.errors.pop();
+            self.errors.pop_back();
         }
     }
 

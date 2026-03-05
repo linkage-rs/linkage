@@ -26,5 +26,5 @@ version = "1.0"
 features = ["fs"]
 
 [dependencies.iced]
-features = ["tokio", "wgpu", "tiny-skia", "advanced"]
+features = ["tokio", "wgpu", "tiny-skia", "advanced", "canvas", "crisp"]
 version = "0.14"

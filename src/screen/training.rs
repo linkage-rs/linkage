@@ -1,11 +1,14 @@
+use std::collections::HashSet;
+
 use iced::keyboard::key::Named;
 use iced::keyboard::{self, Key};
 use iced::widget::{Space, button, column, container, row, text};
-use iced::{Alignment, Length, Subscription, alignment, padding};
+use iced::{Alignment, Length, Subscription, alignment};
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::data::profile;
-use crate::data::training::{CHARS_PER_LINE, Difficulty, MAX_ERRORS, MIN_CLEAN_PCT, TriplePoint};
+use crate::data::training::{CHARS_PER_LINE, Difficulty, MIN_CLEAN_PCT, TriplePoint};
+use crate::screen::mini_keyboard::{MiniKeyboard, MiniKeyboardData};
 use crate::{Element, font, style};
 
 #[derive(Debug)]
@@ -13,6 +16,7 @@ pub struct State {
     modifiers: keyboard::Modifiers,
     accuracy_metric: TriplePoint,
     wpm_metric: TriplePoint,
+    pressed_keys: HashSet<char>,
 }
 
 #[derive(Debug, Clone)]
@@ -29,9 +33,7 @@ pub enum Event {
 }
 
 const CHAR_WIDTH: u32 = 10;
-const ROW_CHARS: u32 = (CHARS_PER_LINE + MAX_ERRORS - 1) as u32;
-const ROW_WIDTH: u32 = CHAR_WIDTH * ROW_CHARS;
-const ROW_ERROR_WIDTH: u32 = (MAX_ERRORS - 1) as u32 * CHAR_WIDTH;
+const ROW_WIDTH: u32 = CHAR_WIDTH * CHARS_PER_LINE as u32;
 const LINE_SPACE: u32 = 10;
 const STATS_WIDTH: u32 = 75;
 pub const OVERALL_WIDTH: u32 = 2 * STATS_WIDTH + ROW_WIDTH;
@@ -43,6 +45,7 @@ impl State {
             accuracy_metric: TriplePoint::new(0.5, MIN_CLEAN_PCT, 0.975).unwrap_or_default(),
             wpm_metric: TriplePoint::new(10.0, f32::from(difficulty.words_per_minute()), 60.0)
                 .unwrap_or_default(),
+            pressed_keys: HashSet::new(),
         }
     }
 
@@ -56,7 +59,11 @@ impl State {
         }
     }
 
-    pub fn view(&self, profiles: &profile::List) -> Element<'_, Message> {
+    pub fn view(
+        &self,
+        profiles: &profile::List,
+        theme: &crate::data::Theme,
+    ) -> Element<'_, Message> {
         let active_line_children: Vec<Element<Message>> = profiles
             .session()
             .hits
@@ -93,6 +100,7 @@ impl State {
                         }
                     }),
             )
+            .take(CHARS_PER_LINE)
             .collect();
 
         let active_line = row(active_line_children);
@@ -130,18 +138,28 @@ impl State {
             .spacing(LINE_SPACE)
             .width(ROW_WIDTH);
 
-        let error_pad = if STATS_WIDTH > ROW_ERROR_WIDTH {
-            STATS_WIDTH - ROW_ERROR_WIDTH
-        } else {
-            0
+        let training = column![content_active, content_next];
+        let mut center_column = column![
+            container(training)
+                .center_x(Length::Fill)
+                .center_y(Length::Fill)
+        ]
+        .align_x(Alignment::Center);
+        if profiles.active().mini_keyboard.show {
+            let mini_keyboard = MiniKeyboard::view(MiniKeyboardData::new(
+                &profiles.active().layout,
+                &profiles.active().mini_keyboard,
+                &profiles.active().state,
+                &self.accuracy_metric,
+                &self.wpm_metric,
+                theme,
+                &self.pressed_keys,
+            ));
+            let keyboard_container = container(mini_keyboard)
+                .center_x(Length::Fill)
+                .center_y(Length::Fixed(100.0));
+            center_column = center_column.push(keyboard_container);
         };
-
-        let training = column![content_active, content_next].padding(padding::right(error_pad));
-        let training = container(training)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x(Length::Fill)
-            .center_y(Length::Fill);
 
         let letter_stats_children: Vec<Element<Message>> = profiles
             .active()
@@ -183,7 +201,7 @@ impl State {
             .spacing(2)
             .padding(5);
 
-        let content = row![letter_stats, training]
+        let content = row![letter_stats, center_column, Space::new().width(STATS_WIDTH)]
             .width(Length::Fill)
             .height(Length::Fill);
 
@@ -222,6 +240,20 @@ impl State {
                 modifiers,
                 ..
             } => {
+                // Track pressed keys for mini keyboard highlight
+                match key.as_ref() {
+                    Key::Named(Named::Space) => {
+                        self.pressed_keys.insert(' ');
+                    }
+                    _ => {
+                        if let Some(txt) = &key_text {
+                            for c in txt.chars() {
+                                self.pressed_keys.insert(c.to_ascii_lowercase());
+                            }
+                        }
+                    }
+                }
+
                 match key.as_ref() {
                     Key::Named(Named::Space) => {
                         if let Some(line) = profiles.session_mut().apply_char(' ') {
@@ -262,7 +294,22 @@ impl State {
                     }
                 }
             }
-            _ => None,
+
+            keyboard::Event::KeyReleased { key, .. } => {
+                // Untrack released keys for mini keyboard highlight
+                match key.as_ref() {
+                    Key::Named(Named::Space) => {
+                        self.pressed_keys.remove(&' ');
+                    }
+                    Key::Character(txt) => {
+                        for c in txt.chars() {
+                            self.pressed_keys.remove(&c.to_ascii_lowercase());
+                        }
+                    }
+                    _ => {}
+                }
+                None
+            }
         }
     }
 }

@@ -8,19 +8,20 @@ pub struct State {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Loaded(data::Saved),
+    Loaded(Result<data::Saved, String>),
 }
 
 pub enum Event {
     Load {
         profiles: profile::List,
         theme: Theme,
+        error: Option<String>,
     },
 }
 
 pub async fn load() -> Message {
-    let saved = data::Saved::load().await.unwrap_or_default();
-    Message::Loaded(saved)
+    let result = data::Saved::load().await.map_err(|e| e.to_string());
+    Message::Loaded(result)
 }
 
 impl State {
@@ -34,7 +35,11 @@ impl State {
 
     pub fn update(&mut self, message: Message) -> Option<Event> {
         match message {
-            Message::Loaded(saved) => {
+            Message::Loaded(result) => {
+                let (saved, error) = match result {
+                    Ok(saved) => (saved, None),
+                    Err(err) => (data::Saved::default(), Some(err)),
+                };
                 let data::Saved {
                     profiles,
                     theme_name,
@@ -43,6 +48,7 @@ impl State {
                 Some(Event::Load {
                     profiles: profiles.into(),
                     theme: Theme::from_name(&theme_name).unwrap_or_default(),
+                    error,
                 })
             }
         }

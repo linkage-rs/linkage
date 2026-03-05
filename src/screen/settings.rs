@@ -4,6 +4,7 @@ use iced::widget::{Column, Row, button, column, container, rule, scrollable, tex
 use crate::data::{self, Theme};
 use crate::{Element, style};
 
+pub mod keyboard;
 mod profile;
 mod theme;
 
@@ -14,6 +15,7 @@ pub struct State {
 
 #[derive(Debug)]
 pub enum Screen {
+    Keyboard(keyboard::State),
     Profile(profile::State),
     Theme(theme::State),
 }
@@ -21,6 +23,8 @@ pub enum Screen {
 #[derive(Debug, Clone)]
 pub enum Message {
     BackButtonPressed,
+    Keyboard(keyboard::Message),
+    KeyboardPressed,
     Profile(profile::Message),
     ProfilesPressed,
     Theme(theme::Message),
@@ -51,6 +55,16 @@ impl State {
             Message::BackButtonPressed => {
                 return Some(Event::Exit);
             }
+            Message::Keyboard(message) => {
+                if let Screen::Keyboard(state) = screen {
+                    if state.update(profiles, message) {
+                        return Some(Event::Save);
+                    }
+                }
+            }
+            Message::KeyboardPressed => {
+                *screen = Screen::keyboard(profiles);
+            }
             Message::Profile(message) => {
                 if let Screen::Profile(state) = screen {
                     if state.update(profiles, message) {
@@ -79,7 +93,11 @@ impl State {
         None
     }
 
-    pub fn view(&self, profiles: &data::profile::List) -> Element<'_, Message> {
+    pub fn view(
+        &self,
+        profiles: &data::profile::List,
+        theme: &data::Theme,
+    ) -> Element<'_, Message> {
         let State { screen } = self;
 
         let back_button = button(text("\u{2190} Back").size(14))
@@ -92,6 +110,11 @@ impl State {
                 label: "Profiles",
                 message: Message::ProfilesPressed,
                 is_active: matches!(screen, Screen::Profile(..)),
+            },
+            MenuItem {
+                label: "Keyboard",
+                message: Message::KeyboardPressed,
+                is_active: matches!(screen, Screen::Keyboard(..)),
             },
             MenuItem {
                 label: "Themes",
@@ -133,7 +156,7 @@ impl State {
         let content = Row::new()
             .push(menu)
             .push(rule::vertical(1))
-            .push(screen.view(profiles))
+            .push(screen.view(profiles, theme))
             .height(Length::Fill)
             .width(Length::Fill);
 
@@ -157,6 +180,10 @@ struct MenuItem {
 }
 
 impl Screen {
+    fn keyboard(profiles: &data::profile::List) -> Self {
+        Screen::Keyboard(keyboard::State::new(profiles))
+    }
+
     fn profile() -> Self {
         Screen::Profile(profile::State::new())
     }
@@ -165,8 +192,9 @@ impl Screen {
         Screen::Theme(theme::State::new(active))
     }
 
-    fn view(&self, profiles: &data::profile::List) -> Element<'_, Message> {
+    fn view(&self, profiles: &data::profile::List, theme: &data::Theme) -> Element<'_, Message> {
         match self {
+            Screen::Keyboard(state) => state.view(profiles, theme).map(Message::Keyboard),
             Screen::Profile(state) => state.view(profiles).map(Message::Profile),
             Screen::Theme(state) => state.view().map(Message::Theme),
         }
