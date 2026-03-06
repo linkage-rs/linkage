@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
-use super::keyboard::{Layout, MiniKeyboardSettings};
+use super::keyboard::{Layout, Settings};
 use super::training::{Difficulty, Line, Session, State};
 use super::words;
 use super::zipper_list::{Item, ZipperList};
@@ -18,7 +18,7 @@ pub struct Profile {
     state: State,
     words: words::Setting,
     #[serde(default)]
-    mini_keyboard: MiniKeyboardSettings,
+    mini_keyboard: Settings,
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ pub struct Active {
     pub difficulty: Difficulty,
     pub state: State,
     pub session: Session,
-    pub mini_keyboard: MiniKeyboardSettings,
+    pub mini_keyboard: Settings,
 }
 
 #[derive(Debug, Clone)]
@@ -54,7 +54,7 @@ impl Profile {
             difficulty,
             state,
             words: words::Setting::default(),
-            mini_keyboard: MiniKeyboardSettings::default(),
+            mini_keyboard: Settings::default(),
         }
     }
 }
@@ -71,7 +71,7 @@ impl Default for Profile {
             difficulty: Difficulty::default(),
             state,
             words: words::Setting::default(),
-            mini_keyboard: MiniKeyboardSettings::default(),
+            mini_keyboard: Settings::default(),
         }
     }
 }

@@ -7,11 +7,9 @@ use iced::{Point, mouse};
 
 use crate::data::CharSet;
 use crate::data::Theme;
-use crate::data::keyboard::{KeyboardMetric, Layout, MiniKeyboardSettings, PhysicalKey};
+use crate::data::keyboard::{self, Layout, Metric, PhysicalKey, Settings};
 use crate::data::training::{State as TrainingState, TriplePoint};
 
-/// Pixel size of one key unit (internal width/height).
-const KEY_SIZE: f32 = 15.0;
 /// Stroke width for key outlines.
 const STROKE_WIDTH: f32 = 1.0;
 
@@ -27,7 +25,9 @@ pub struct MiniKeyboardData {
     /// Set of characters currently pressed (held down).
     pub pressed: HashSet<char>,
     /// Which metric to use for fill.
-    pub metric: KeyboardMetric,
+    pub metric: Metric,
+    /// Size of the keys
+    pub size: keyboard::Size,
     /// Theme colors.
     pub text_color: Color,
     pub primary_color: Color,
@@ -38,7 +38,7 @@ pub struct MiniKeyboardData {
 impl MiniKeyboardData {
     pub fn new(
         layout: &Layout,
-        settings: &MiniKeyboardSettings,
+        settings: &Settings,
         training_state: &TrainingState,
         accuracy_metric: &TriplePoint,
         wpm_metric: &TriplePoint,
@@ -61,8 +61,8 @@ impl MiniKeyboardData {
                 continue;
             }
             let fill_value = match settings.metric {
-                KeyboardMetric::Accuracy => accuracy_metric.value(clean_val),
-                KeyboardMetric::Speed => {
+                Metric::Accuracy => accuracy_metric.value(clean_val),
+                Metric::Speed => {
                     if let Some(stats) = training_state.timings.get(&ch) {
                         let wpm: f32 = stats.wpm_harmonic_mean.into();
                         wpm_metric.value(wpm)
@@ -82,6 +82,7 @@ impl MiniKeyboardData {
             unlocked,
             pressed: pressed.clone(),
             metric: settings.metric,
+            size: settings.size,
             text_color: theme.text(),
             primary_color: theme.palette().primary,
             metric_colors,
@@ -89,7 +90,7 @@ impl MiniKeyboardData {
     }
 
     /// Build a simpler version for settings preview (no training state).
-    pub fn preview(layout: &Layout, settings: &MiniKeyboardSettings, theme: &Theme) -> Self {
+    pub fn preview(layout: &Layout, settings: &Settings, theme: &Theme) -> Self {
         let keys = layout.physical_keys();
         let board_size = layout.keyboard_size();
 
@@ -99,6 +100,7 @@ impl MiniKeyboardData {
             unlocked: HashSet::new(),
             pressed: HashSet::new(),
             metric: settings.metric,
+            size: settings.size,
             text_color: theme.text(),
             primary_color: theme.palette().primary,
             metric_colors: HashMap::new(),
@@ -107,12 +109,17 @@ impl MiniKeyboardData {
 
     /// The pixel width of the rendered keyboard.
     pub fn pixel_width(&self) -> f32 {
-        self.board_size.0 * (KEY_SIZE + STROKE_WIDTH) + STROKE_WIDTH
+        self.board_size.0 * (self.key_size() + STROKE_WIDTH) + STROKE_WIDTH
     }
 
     /// The pixel height of the rendered keyboard.
     pub fn pixel_height(&self) -> f32 {
-        self.board_size.1 * (KEY_SIZE + STROKE_WIDTH) + STROKE_WIDTH
+        self.board_size.1 * (self.key_size() + STROKE_WIDTH) + STROKE_WIDTH
+    }
+
+    /// The pixel size of the key
+    const fn key_size(&self) -> f32 {
+        self.size.px()
     }
 }
 
@@ -123,10 +130,10 @@ pub fn draw_keyboard(frame: &mut Frame, data: &MiniKeyboardData) {
     let half = STROKE_WIDTH / 2.0;
 
     for key in &data.keys {
-        let x = half + (key.x * KEY_SIZE).floor();
-        let y = half + key.y * KEY_SIZE;
-        let w = key.w * KEY_SIZE;
-        let h = key.h * KEY_SIZE;
+        let x = half + (key.x * data.key_size()).floor();
+        let y = half + key.y * data.key_size();
+        let w = key.w * data.key_size();
+        let h = key.h * data.key_size();
 
         // Fill keys
         let fill_color = if data.unlocked.contains(&key.ch) && key.ch != ' ' {

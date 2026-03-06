@@ -57,9 +57,8 @@ impl State {
             }
             Message::Keyboard(message) => {
                 if let Screen::Keyboard(state) = screen {
-                    if state.update(profiles, message) {
-                        return Some(Event::Save);
-                    }
+                    state.update(profiles, message);
+                    return Some(Event::Save);
                 }
             }
             Message::KeyboardPressed => {
@@ -137,7 +136,7 @@ impl State {
                         .center_y(Length::Fill);
                     if is_active {
                         container(label_text)
-                            .class(style::Container::RoundedBox)
+                            .class(style::Container::MenuSelected)
                             .width(Length::Fill)
                             .into()
                     } else {

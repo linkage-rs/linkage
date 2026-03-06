@@ -267,37 +267,36 @@ impl Layout {
 
 /// Which metric to use for the mini keyboard fill color.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-pub enum KeyboardMetric {
+pub enum Metric {
     #[default]
     Accuracy,
     Speed,
 }
+impl Metric {
+    pub const ALL: &[Self] = &[Self::Accuracy, Self::Speed];
+}
 
-impl std::fmt::Display for KeyboardMetric {
+impl std::fmt::Display for Metric {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            KeyboardMetric::Accuracy => write!(f, "Accuracy"),
-            KeyboardMetric::Speed => write!(f, "Speed"),
-        }
+        let s = match self {
+            Metric::Accuracy => "Accuracy",
+            Metric::Speed => "Speed",
+        };
+
+        s.fmt(f)
     }
 }
 
-pub const ALL_KEYBOARD_METRICS: &[KeyboardMetric] =
-    &[KeyboardMetric::Accuracy, KeyboardMetric::Speed];
-
 /// User settings for the mini keyboard overlay on the training screen.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MiniKeyboardSettings {
-    pub show: bool,
-    pub metric: KeyboardMetric,
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+pub struct Settings {
+    pub metric: Metric,
+    pub size: Size,
 }
 
-impl Default for MiniKeyboardSettings {
-    fn default() -> Self {
-        Self {
-            show: true,
-            metric: KeyboardMetric::default(),
-        }
+impl Settings {
+    pub fn is_visible(&self) -> bool {
+        self.size.is_visible()
     }
 }
 
@@ -314,4 +313,44 @@ pub struct PhysicalKey {
     pub w: f32,
     /// Height of the key in key-height units
     pub h: f32,
+}
+
+/// Display size for the mini keyboard
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+pub enum Size {
+    Off,
+    Small,
+    #[default]
+    Medium,
+    Large,
+}
+
+impl Size {
+    pub const ALL: &[Self] = &[Self::Off, Self::Small, Self::Medium, Self::Large];
+
+    pub fn is_visible(&self) -> bool {
+        !matches!(self, Size::Off)
+    }
+
+    /// Size of each key
+    pub const fn px(&self) -> f32 {
+        match self {
+            Size::Off | Size::Small => 9.0,
+            Size::Medium => 15.0,
+            Size::Large => 25.0,
+        }
+    }
+}
+
+impl std::fmt::Display for Size {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Size::Off => "Off",
+            Size::Small => "Small",
+            Size::Medium => "Medium",
+            Size::Large => "Large",
+        };
+
+        s.fmt(f)
+    }
 }

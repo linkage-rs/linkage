@@ -177,11 +177,10 @@ impl Menu {
                 .map(|(i, (name, is_active))| -> Element<Message> {
                     let label = container(text(name.to_string()).size(14))
                         .padding(6)
-                        .center_x(Length::Fill)
                         .center_y(Length::Fill);
                     if is_active {
                         container(label)
-                            .class(style::Container::RoundedBox)
+                            .class(style::Container::MenuSelected)
                             .width(Length::Fill)
                             .into()
                     } else {

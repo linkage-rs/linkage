@@ -145,7 +145,7 @@ impl State {
                 .center_y(Length::Fill)
         ]
         .align_x(Alignment::Center);
-        if profiles.active().mini_keyboard.show {
+        if profiles.active().mini_keyboard.is_visible() {
             let mini_keyboard = MiniKeyboard::view(MiniKeyboardData::new(
                 &profiles.active().layout,
                 &profiles.active().mini_keyboard,
@@ -156,8 +156,9 @@ impl State {
                 &self.pressed_keys,
             ));
             let keyboard_container = container(mini_keyboard)
-                .center_x(Length::Fill)
-                .center_y(Length::Fixed(100.0));
+                .align_bottom(Length::Fill)
+                .center_y(Length::Fixed(125.0))
+                .padding([10, 0]);
             center_column = center_column.push(keyboard_container);
         };
 
