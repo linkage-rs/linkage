@@ -22,22 +22,42 @@ pub fn all() -> Vec<Theme> {
 #[derive(Debug, Clone)]
 pub enum Theme {
     Ayu,
+    MonochromeBlack,
+    MonochromeWhite,
     Monokai,
     NordLight,
     OneDark,
+    RosePine,
+    RosePineDawn,
+    RosePineMoon,
     /// An Iced built-in theme
     BuiltIn(iced::Theme),
 }
 
 impl Theme {
-    const ALL: &'static [Self] = &[Self::Ayu, Self::Monokai, Self::NordLight, Self::OneDark];
+    const ALL: &'static [Self] = &[
+        Self::Ayu,
+        Self::MonochromeBlack,
+        Self::MonochromeWhite,
+        Self::Monokai,
+        Self::NordLight,
+        Self::OneDark,
+        Self::RosePine,
+        Self::RosePineDawn,
+        Self::RosePineMoon,
+    ];
 
     pub fn name(&self) -> &str {
         match self {
             Theme::Ayu => "Ayu",
+            Theme::MonochromeBlack => "Monochrome Black",
+            Theme::MonochromeWhite => "Monochrome White",
             Theme::Monokai => "Monokai",
             Theme::NordLight => "Nord Light",
             Theme::OneDark => "One Dark",
+            Theme::RosePine => "Rosé Pine",
+            Theme::RosePineDawn => "Rosé Pine Dawn",
+            Theme::RosePineMoon => "Rosé Pine Moon",
             Theme::BuiltIn(theme) => theme.name(),
         }
     }
@@ -86,6 +106,22 @@ impl Theme {
                 warning: color!(0xffb454),
                 danger: color!(0xf07178),
             },
+            Theme::MonochromeBlack => Palette {
+                background: color!(0x000000),
+                text: color!(0xbbbbbb),
+                primary: color!(0xaaaaaa),
+                success: color!(0xcccccc),
+                warning: color!(0xd0d0d0),
+                danger: color!(0xffffff),
+            },
+            Theme::MonochromeWhite => Palette {
+                background: color!(0xffffff),
+                text: color!(0x444444),
+                primary: color!(0x333333),
+                success: color!(0x222222),
+                warning: color!(0x111111),
+                danger: color!(0x000000),
+            },
             Theme::Monokai => Palette {
                 background: color!(0x272822),
                 text: color!(0xf8f8f2),
@@ -109,6 +145,30 @@ impl Theme {
                 success: color!(0x98c379),
                 warning: color!(0xd19a66),
                 danger: color!(0xbe5046),
+            },
+            Theme::RosePine => Palette {
+                background: color!(0x191724),
+                text: color!(0xe0def4),
+                primary: color!(0x31748f),
+                success: color!(0x9ccfd8),
+                warning: color!(0xf6c177),
+                danger: color!(0xeb6f92),
+            },
+            Theme::RosePineDawn => Palette {
+                background: color!(0xfaf4ed),
+                text: color!(0x575279),
+                primary: color!(0x286983),
+                success: color!(0x56949f),
+                warning: color!(0xea9d34),
+                danger: color!(0xb4637a),
+            },
+            Theme::RosePineMoon => Palette {
+                background: color!(0x232136),
+                text: color!(0xe0def4),
+                primary: color!(0x3e8fb0),
+                success: color!(0x9ccfd8),
+                warning: color!(0xf6c177),
+                danger: color!(0xeb6f92),
             },
             Theme::BuiltIn(theme) => theme.palette(),
         }
@@ -187,9 +247,3 @@ impl From<iced::Theme> for Theme {
         Self::BuiltIn(theme)
     }
 }
-
-// impl From<Option<Theme>> for Option<iced::Theme> {
-//     fn from(maybe_theme: Option<Theme>) -> Self {
-//         maybe_theme.map(iced::Theme::from)
-//     }
-// }
