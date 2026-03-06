@@ -212,7 +212,12 @@ impl<Message> canvas::Program<Message, Theme> for MiniKeyboardProgram<Message> {
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<Geometry> {
+        let position = bounds.position();
+        let snapped = Point::new(position.x.floor() + 1.0, position.y.floor() + 1.0);
+        let delta = snapped - position;
+
         let mut frame = Frame::new(renderer, bounds.size());
+        frame.translate(delta);
         draw_keyboard(&mut frame, &self.data);
         vec![frame.into_geometry()]
     }
