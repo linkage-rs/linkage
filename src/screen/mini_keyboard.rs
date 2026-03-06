@@ -29,7 +29,7 @@ pub struct MiniKeyboardData {
     /// Size of the keys
     pub size: keyboard::Size,
     /// Theme colors.
-    pub text_color: Color,
+    pub outline_color: Color,
     pub primary_color: Color,
     /// Per-character metric fill colors (pre-computed from theme).
     pub metric_colors: HashMap<char, Color>,
@@ -83,7 +83,7 @@ impl MiniKeyboardData {
             pressed: pressed.clone(),
             metric: settings.metric,
             size: settings.size,
-            text_color: theme.text(),
+            outline_color: theme.extended_palette().background.neutral.color,
             primary_color: theme.palette().primary,
             metric_colors,
         }
@@ -101,7 +101,7 @@ impl MiniKeyboardData {
             pressed: HashSet::new(),
             metric: settings.metric,
             size: settings.size,
-            text_color: theme.text(),
+            outline_color: theme.extended_palette().background.neutral.color,
             primary_color: theme.palette().primary,
             metric_colors: HashMap::new(),
         }
@@ -125,8 +125,6 @@ impl MiniKeyboardData {
 
 /// Draw the mini keyboard onto an iced canvas Frame.
 pub fn draw_keyboard(frame: &mut Frame, data: &MiniKeyboardData) {
-    let outline_color = data.text_color;
-
     let half = STROKE_WIDTH / 2.0;
 
     for key in &data.keys {
@@ -160,7 +158,7 @@ pub fn draw_keyboard(frame: &mut Frame, data: &MiniKeyboardData) {
         frame.stroke(
             &rect,
             Stroke {
-                style: outline_color.into(),
+                style: data.outline_color.into(),
                 width: STROKE_WIDTH,
                 ..Stroke::default()
             },
