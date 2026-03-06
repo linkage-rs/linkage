@@ -178,16 +178,16 @@ impl Theme {
         Extended::generate(self.palette())
     }
 
-    /// Between 0.0 and 0.5, return a blend from error -> text
-    /// Between 0.5 and 1.0, return a blend from text -> target
+    /// Between 0.0 and 0.5, return a blend from error -> warning
+    /// Between 0.5 and 1.0, return a blend from warning -> target
     pub fn metric(&self, value: f32) -> Color {
         let value = value.min(1.0).max(0.0);
         if value < 0.5 {
             let pct = value / 0.5;
-            mix(self.palette().danger, self.palette().text, pct)
+            mix(self.palette().danger, self.palette().warning, pct)
         } else {
             let pct = (value - 0.5) / 0.5;
-            mix(self.palette().text, self.palette().success, pct)
+            mix(self.palette().warning, self.palette().success, pct)
         }
     }
 }
